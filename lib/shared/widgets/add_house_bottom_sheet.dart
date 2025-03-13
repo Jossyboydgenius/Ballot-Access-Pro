@@ -101,7 +101,7 @@ class AddHouseBottomSheet extends StatelessWidget {
             ),
             AppSpacing.v24(),
             AppButton(
-              text: 'Add House',
+              text: 'Add Pin',
               onPressed: onAddHouse,
               style: AppTextStyle.semibold16.copyWith(color: Colors.white),
             ),
