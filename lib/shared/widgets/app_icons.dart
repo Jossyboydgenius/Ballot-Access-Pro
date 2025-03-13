@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 class AppIconData {
   static const String _basePath = 'assets/svgs/';
   static const String logo = '${_basePath}logo.svg';
+  static const String successmark = '${_basePath}successmark.svg';
 }
 
 class AppIcons extends StatelessWidget {
