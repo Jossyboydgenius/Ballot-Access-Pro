@@ -1,8 +1,12 @@
+import 'package:ballot_access_pro/shared/widgets/add_house_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:location/location.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:geolocator/geolocator.dart' as geo;
 import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
-import 'package:ballot_access_pro/shared/widgets/app_button.dart';
 
 class MapView extends StatefulWidget {
   const MapView({super.key});
@@ -13,19 +17,103 @@ class MapView extends StatefulWidget {
 
 class _MapViewState extends State<MapView> {
   String selectedStatus = '';
+  GoogleMapController? _mapController;
+  Location _location = Location();
+  LatLng? _currentPosition;
+  String _currentAddress = 'Fetching location...';
+  Set<Marker> _markers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _requestLocationPermission();
+  }
+
+  Future<void> _requestLocationPermission() async {
+    final status = await Permission.location.request();
+    if (status.isGranted) {
+      _getCurrentLocation();
+      _setupLocationListener();
+    }
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      final position = await geo.Geolocator.getCurrentPosition(
+        desiredAccuracy: geo.LocationAccuracy.high,
+      );
+      setState(() {
+        _currentPosition = LatLng(position.latitude, position.longitude);
+      });
+      _updateAddress();
+      _animateToCurrentLocation();
+    } catch (e) {
+      debugPrint('Error getting location: $e');
+    }
+  }
+
+  void _setupLocationListener() {
+    _location.onLocationChanged.listen((LocationData locationData) {
+      if (mounted && locationData.latitude != null && locationData.longitude != null) {
+        setState(() {
+          _currentPosition = LatLng(locationData.latitude!, locationData.longitude!);
+          _updateMarker();
+        });
+      }
+    });
+  }
+
+  Future<void> _updateAddress() async {
+    if (_currentPosition == null) return;
+    // TODO: Implement reverse geocoding to get address from coordinates
+    setState(() {
+      _currentAddress = '${_currentPosition!.latitude}, ${_currentPosition!.longitude}';
+    });
+  }
+
+  void _updateMarker() {
+    if (_currentPosition == null) return;
+    setState(() {
+      _markers = {
+        Marker(
+          markerId: const MarkerId('currentLocation'),
+          position: _currentPosition!,
+          infoWindow: const InfoWindow(title: 'Current Location'),
+        ),
+      };
+    });
+  }
+
+  void _animateToCurrentLocation() {
+    if (_mapController != null && _currentPosition != null) {
+      _mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: _currentPosition!,
+            zoom: 15,
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // TODO: Implement Google Maps widget here
-          Container(
-            color: Colors.grey[200],
-            child: const Center(
-              child: Text('Google Maps will be integrated here'),
-            ),
-          ),
+          _currentPosition == null
+              ? const Center(child: CircularProgressIndicator())
+              : GoogleMap(
+                  initialCameraPosition: CameraPosition(
+                    target: _currentPosition!,
+                    zoom: 15,
+                  ),
+                  onMapCreated: (controller) => _mapController = controller,
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: false,
+                  markers: _markers,
+                ),
           // Status Filter Bar
           Positioned(
             top: 50.h,
@@ -62,7 +150,7 @@ class _MapViewState extends State<MapView> {
               ),
             ),
           ),
-          // Add House Button
+          // Buttons
           Positioned(
             bottom: 16.h,
             right: 16.w,
@@ -73,27 +161,18 @@ class _MapViewState extends State<MapView> {
                   heroTag: 'locate',
                   mini: true,
                   backgroundColor: Colors.white,
-                  onPressed: () {
-                    // TODO: Implement current location
-                  },
+                  onPressed: _animateToCurrentLocation,
                   child: const Icon(Icons.my_location, color: AppColors.primary),
                 ),
                 SizedBox(height: 8.h),
                 FloatingActionButton.extended(
                   heroTag: 'add',
                   backgroundColor: AppColors.primary,
-                  onPressed: () {
-                    _showAddHouseBottomSheet(context);
-                  },
-                  icon: const Icon(
-                    Icons.add_location_alt,
-                    color: Colors.white,
-                  ),
-                  label: const Text(
+                  onPressed: () => _showAddHouseBottomSheet(context),
+                  icon: const Icon(Icons.add_location_alt, color: Colors.white),
+                  label: Text(
                     'Add House',
-                    style: TextStyle(
-                      color: Colors.white,
-                    ),
+                    style: AppTextStyle.semibold16.copyWith(color: Colors.white),
                   ),
                 ),
               ],
@@ -131,77 +210,16 @@ class _MapViewState extends State<MapView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(16.r),
-          ),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(16.w),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Add New House',
-                style: AppTextStyle.bold20,
-              ),
-              SizedBox(height: 16.h),
-              Text(
-                'Current Location',
-                style: AppTextStyle.regular14,
-              ),
-              SizedBox(height: 8.h),
-              Container(
-                padding: EdgeInsets.all(12.w),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.location_on, color: AppColors.primary),
-                    SizedBox(width: 8.w),
-                    Expanded(
-                      child: Text(
-                        '123 Main St, City, State 12345',
-                        style: AppTextStyle.regular14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 16.h),
-              Text(
-                'Status',
-                style: AppTextStyle.regular14,
-              ),
-              SizedBox(height: 8.h),
-              Wrap(
-                spacing: 8.w,
-                children: [
-                  _buildStatusChip('Signed', Colors.green),
-                  _buildStatusChip('Come Back', Colors.orange),
-                  _buildStatusChip('Not Home', Colors.blue),
-                  _buildStatusChip('BAS', Colors.red),
-                ],
-              ),
-              SizedBox(height: 24.h),
-              AppButton(
-                text: 'Add House',
-                onPressed: () {
-                  // TODO: Implement add house logic
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-        ),
+      builder: (context) => AddHouseBottomSheet(
+        currentAddress: _currentAddress,
+        selectedStatus: selectedStatus,
+        onStatusSelected: (status) {
+          setState(() => selectedStatus = status);
+        },
+        onAddHouse: () {
+          // TODO: Implement add house logic
+          Navigator.pop(context);
+        },
       ),
     );
   }
