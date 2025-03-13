@@ -164,7 +164,7 @@ class ProfileView extends StatelessWidget {
               SizedBox(width: 16.w),
               Expanded(
                 child: _buildStatItem(
-                  'Active Days',
+                  'Pending Revisits',
                   '45',
                   Icons.calendar_today,
                   Colors.purple,
@@ -234,26 +234,10 @@ class ProfileView extends StatelessWidget {
           ),
           _buildDivider(),
           _buildMenuItem(
-            'Territory Settings',
+            'Territory',
             Icons.map_outlined,
             onTap: () {
               // TODO: Navigate to territory settings screen
-            },
-          ),
-          _buildDivider(),
-          _buildMenuItem(
-            'Notifications',
-            Icons.notifications_outlined,
-            onTap: () {
-              // TODO: Navigate to notifications screen
-            },
-          ),
-          _buildDivider(),
-          _buildMenuItem(
-            'Help & Support',
-            Icons.help_outline,
-            onTap: () {
-              // TODO: Navigate to help screen
             },
           ),
           _buildDivider(),
