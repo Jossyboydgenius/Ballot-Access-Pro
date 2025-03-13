@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:ballot_access_pro/shared/navigation/app_routes.dart';
 import 'package:ballot_access_pro/shared/navigation/navigation_service.dart';
 import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/shared/constants/app_spacing.dart';
@@ -120,6 +121,7 @@ class _SignUpViewState extends State<SignUpView> {
                         ? () {
                             if (formKey.currentState!.validate()) {
                               // TODO: Implement sign up logic
+                              NavigationService.pushReplacementNamed(AppRoutes.homeView);
                             }
                           }
                         : null,
