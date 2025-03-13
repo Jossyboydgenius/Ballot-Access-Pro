@@ -3,7 +3,6 @@ import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/shared/utils/app_sizer.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/map_view.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/leads_view.dart';
-import 'package:ballot_access_pro/ui/views/petitioner/reports_view.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/profile_view.dart';
 
 class PetitionerHomeView extends StatefulWidget {
@@ -19,7 +18,6 @@ class _PetitionerHomeViewState extends State<PetitionerHomeView> {
   final List<Widget> _pages = [
     const MapView(),
     const LeadsView(),
-    const ReportsView(),
     const ProfileView(),
   ];
 
@@ -45,11 +43,6 @@ class _PetitionerHomeViewState extends State<PetitionerHomeView> {
             icon: Icon(Icons.people_outline),
             activeIcon: Icon(Icons.people),
             label: 'Leads',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart_outlined),
-            activeIcon: Icon(Icons.bar_chart),
-            label: 'Reports',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
