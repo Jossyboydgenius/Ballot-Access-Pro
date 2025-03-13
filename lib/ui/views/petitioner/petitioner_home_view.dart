@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:ballot_access_pro/shared/constants/app_colors.dart';
-import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:ballot_access_pro/shared/utils/app_sizer.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/map_view.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/leads_view.dart';
