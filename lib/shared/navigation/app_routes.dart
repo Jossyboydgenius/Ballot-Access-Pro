@@ -6,6 +6,7 @@ import 'package:ballot_access_pro/ui/views/authentication/password_otp_verificat
 import 'package:ballot_access_pro/ui/views/authentication/reset_password_view.dart';
 import 'package:ballot_access_pro/ui/views/authentication/password_changed_view.dart';
 import 'package:ballot_access_pro/ui/views/splash_screen_view.dart';
+import 'package:ballot_access_pro/ui/views/home/home_view.dart';
 
 class AppRoutes {
   static const String splashScreenView = '/';
@@ -15,6 +16,7 @@ class AppRoutes {
   static const String passwordOtpVerificationView = '/password-otp-verification';
   static const String resetPasswordView = '/reset-password';
   static const String passwordChangedView = '/password-changed';
+  static const String homeView = '/home';
 
   static String get initialRoute => splashScreenView;
 
@@ -26,5 +28,6 @@ class AppRoutes {
     passwordOtpVerificationView: (context) => const PasswordOtpVerificationView(),
     resetPasswordView: (context) => const ResetPasswordView(),
     passwordChangedView: (context) => const PasswordChangedView(),
+    homeView: (context) => const HomeView(),
   };
 } 
