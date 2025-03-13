@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
-import 'package:ballot_access_pro/shared/utils/app_sizer.dart';
 import 'package:ballot_access_pro/shared/navigation/app_routes.dart';
 import 'package:ballot_access_pro/shared/navigation/navigation_service.dart';
 
@@ -11,8 +10,6 @@ class ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    AppDimension.init(context);
-
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -29,9 +26,9 @@ class ProfileView extends StatelessWidget {
           children: [
             _buildProfileHeader(),
             SizedBox(height: 24.h),
-            _buildStats(),
+            _buildStatisticsSection(),
             SizedBox(height: 24.h),
-            _buildMenuItems(),
+            _buildMenuSection(),
           ],
         ),
       ),
@@ -39,39 +36,12 @@ class ProfileView extends StatelessWidget {
   }
 
   Widget _buildProfileHeader() {
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 50.r,
-          backgroundColor: AppColors.primary.withOpacity(0.1),
-          child: Icon(
-            Icons.person,
-            size: 50.r,
-            color: AppColors.primary,
-          ),
-        ),
-        SizedBox(height: 16.h),
-        Text(
-          'John Doe',
-          style: AppTextStyle.bold20,
-        ),
-        SizedBox(height: 4.h),
-        Text(
-          'john.doe@example.com',
-          style: AppTextStyle.regular14.copyWith(
-            color: Colors.grey[600],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStats() {
     return Container(
+      width: double.infinity,
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8.r),
+        borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -80,40 +50,171 @@ class ProfileView extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      child: Column(
         children: [
-          _buildStatItem('Houses Visited', '150'),
-          _buildStatItem('Success Rate', '75%'),
-          _buildStatItem('Hours Today', '6.5'),
+          CircleAvatar(
+            radius: 50.r,
+            backgroundColor: AppColors.primary.withOpacity(0.1),
+            child: Text(
+              'JD',
+              style: AppTextStyle.bold24.copyWith(
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+          SizedBox(height: 16.h),
+          Text(
+            'John Doe',
+            style: AppTextStyle.bold20,
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            'Petitioner',
+            style: AppTextStyle.regular14.copyWith(
+              color: Colors.grey[600],
+            ),
+          ),
+          SizedBox(height: 16.h),
+          Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: 12.w,
+              vertical: 6.h,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20.r),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.check_circle,
+                  color: Colors.green,
+                  size: 16.r,
+                ),
+                SizedBox(width: 4.w),
+                Text(
+                  'Active',
+                  style: AppTextStyle.regular12.copyWith(
+                    color: Colors.green,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: AppTextStyle.bold24,
-        ),
-        SizedBox(height: 4.h),
-        Text(
-          label,
-          style: AppTextStyle.regular12.copyWith(
-            color: Colors.grey[600],
+  Widget _buildStatisticsSection() {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-        ),
-      ],
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Your Statistics',
+            style: AppTextStyle.semibold16,
+          ),
+          SizedBox(height: 16.h),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatItem(
+                  'Houses Visited',
+                  '1,234',
+                  Icons.home,
+                  Colors.blue,
+                ),
+              ),
+              SizedBox(width: 16.w),
+              Expanded(
+                child: _buildStatItem(
+                  'Success Rate',
+                  '75%',
+                  Icons.check_circle,
+                  Colors.green,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatItem(
+                  'Territory',
+                  'Zone A',
+                  Icons.map,
+                  Colors.orange,
+                ),
+              ),
+              SizedBox(width: 16.w),
+              Expanded(
+                child: _buildStatItem(
+                  'Active Days',
+                  '45',
+                  Icons.calendar_today,
+                  Colors.purple,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildMenuItems() {
+  Widget _buildStatItem(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 20.r),
+          SizedBox(height: 8.h),
+          Text(
+            value,
+            style: AppTextStyle.bold16,
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            title,
+            style: AppTextStyle.regular12.copyWith(
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuSection() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8.r),
+        borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -125,18 +226,26 @@ class ProfileView extends StatelessWidget {
       child: Column(
         children: [
           _buildMenuItem(
-            'Edit Profile',
-            Icons.edit,
+            'Personal Information',
+            Icons.person_outline,
             onTap: () {
-              // TODO: Navigate to edit profile
+              // TODO: Navigate to personal information screen
             },
           ),
           _buildDivider(),
           _buildMenuItem(
-            'Settings',
-            Icons.settings,
+            'Territory Settings',
+            Icons.map_outlined,
             onTap: () {
-              // TODO: Navigate to settings
+              // TODO: Navigate to territory settings screen
+            },
+          ),
+          _buildDivider(),
+          _buildMenuItem(
+            'Notifications',
+            Icons.notifications_outlined,
+            onTap: () {
+              // TODO: Navigate to notifications screen
             },
           ),
           _buildDivider(),
@@ -144,14 +253,14 @@ class ProfileView extends StatelessWidget {
             'Help & Support',
             Icons.help_outline,
             onTap: () {
-              // TODO: Navigate to help
+              // TODO: Navigate to help screen
             },
           ),
           _buildDivider(),
           _buildMenuItem(
             'Sign Out',
             Icons.logout,
-            isDestructive: true,
+            color: Colors.red,
             onTap: () {
               NavigationService.pushReplacementNamed(AppRoutes.signInView);
             },
@@ -164,18 +273,18 @@ class ProfileView extends StatelessWidget {
   Widget _buildMenuItem(
     String title,
     IconData icon, {
-    bool isDestructive = false,
+    Color? color,
     VoidCallback? onTap,
   }) {
     return ListTile(
       leading: Icon(
         icon,
-        color: isDestructive ? Colors.red : Colors.grey[600],
+        color: color ?? Colors.grey[600],
       ),
       title: Text(
         title,
-        style: AppTextStyle.regular16.copyWith(
-          color: isDestructive ? Colors.red : Colors.black,
+        style: AppTextStyle.regular14.copyWith(
+          color: color ?? Colors.black,
         ),
       ),
       trailing: Icon(
