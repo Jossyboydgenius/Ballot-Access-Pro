@@ -23,7 +23,7 @@ class PasswordChangedView extends StatelessWidget {
               AppIcons(
                 icon: AppIconData.successmark,
                 size: 100.r,
-                color: AppColors.primary,
+                color: AppColors.green,
               ),
               AppSpacing.v24(),
               Text(
