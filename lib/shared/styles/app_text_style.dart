@@ -114,10 +114,22 @@ abstract class AppTextStyle {
       );
 
   ///Marcellus bold 24
-  static const TextStyle bold24 = TextStyle(
-    fontWeight: AppFontWeight.bold,
-    fontSize: 24,
-  );
+  static TextStyle get bold24 => _baseTextStyle.copyWith(
+        fontWeight: AppFontWeight.bold,
+        fontSize: 24.spMin,
+      );
+
+  ///Marcellus regular 24
+  static TextStyle get regular24 => _baseTextStyle.copyWith(
+        fontSize: 24.spMin,
+        fontWeight: AppFontWeight.regular,
+      );
+
+  ///Marcellus bold 30
+  static TextStyle get bold30 => _baseTextStyle.copyWith(
+        fontSize: 30.spMin,
+        fontWeight: AppFontWeight.bold,
+      );
 }
 
 abstract class AppFontWeight {
