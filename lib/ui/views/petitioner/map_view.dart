@@ -171,7 +171,7 @@ class _MapViewState extends State<MapView> {
                   onPressed: () => _showAddHouseBottomSheet(context),
                   icon: const Icon(Icons.add_location_alt, color: Colors.white),
                   label: Text(
-                    'Add House',
+                    'Add Pin',
                     style: AppTextStyle.semibold16.copyWith(color: Colors.white),
                   ),
                 ),
