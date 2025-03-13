@@ -50,6 +50,10 @@ dependencies:
   # UI
   flutter_svg: ^2.0.9
   flutter_screenutil: ^5.9.0
+  google_maps_flutter: ^2.5.3
+  location: ^5.0.3
+  permission_handler: ^11.2.0
+  geolocator: ^10.1.0
 
 dev_dependencies:
   flutter_test:
