@@ -112,6 +112,7 @@ class _SignInViewState extends State<SignInView> {
                         ? () {
                             if (formKey.currentState!.validate()) {
                               // TODO: Implement sign in logic
+                              NavigationService.pushReplacementNamed(AppRoutes.homeView);
                             }
                           }
                         : null,
