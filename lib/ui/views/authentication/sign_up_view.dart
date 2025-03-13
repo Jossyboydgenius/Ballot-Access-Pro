@@ -75,7 +75,7 @@ class _SignUpViewState extends State<SignUpView> {
                   AppSpacing.v24(),
                   Text(
                     'Create an account to get started',
-                    style: AppTextStyle.bold20,
+                    style: AppTextStyle.bold24,
                   ),
                   AppSpacing.v32(),
                   AppInput(
@@ -117,11 +117,13 @@ class _SignUpViewState extends State<SignUpView> {
                   AppSpacing.v30(),
                   AppButton(
                     text: 'Sign up',
+                    textColor: Colors.white,
+                    style: AppTextStyle.semibold16.copyWith(color: Colors.white),
                     onPressed: isFormValid
                         ? () {
                             if (formKey.currentState!.validate()) {
                               // TODO: Implement sign up logic
-                              NavigationService.pushReplacementNamed(AppRoutes.homeView);
+                              NavigationService.pushReplacementNamed(AppRoutes.petitionerHomeView);
                             }
                           }
                         : null,
