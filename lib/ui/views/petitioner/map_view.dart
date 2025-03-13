@@ -44,15 +44,21 @@ class _MapViewState extends State<MapView> {
                   ),
                 ],
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildStatusChip('All', Colors.grey),
-                  _buildStatusChip('Signed', Colors.green),
-                  _buildStatusChip('Come Back', Colors.orange),
-                  _buildStatusChip('Not Home', Colors.blue),
-                  _buildStatusChip('BAS', Colors.red),
-                ],
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildStatusChip('All', Colors.grey),
+                    SizedBox(width: 8.w),
+                    _buildStatusChip('Signed', Colors.green),
+                    SizedBox(width: 8.w),
+                    _buildStatusChip('Come Back', Colors.orange),
+                    SizedBox(width: 8.w),
+                    _buildStatusChip('Not Home', Colors.blue),
+                    SizedBox(width: 8.w),
+                    _buildStatusChip('BAS', Colors.red),
+                  ],
+                ),
               ),
             ),
           ),
@@ -79,8 +85,16 @@ class _MapViewState extends State<MapView> {
                   onPressed: () {
                     _showAddHouseBottomSheet(context);
                   },
-                  icon: const Icon(Icons.add_location_alt),
-                  label: const Text('Add House'),
+                  icon: const Icon(
+                    Icons.add_location_alt,
+                    color: Colors.white,
+                  ),
+                  label: const Text(
+                    'Add House',
+                    style: TextStyle(
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ],
             ),
