@@ -11,6 +11,8 @@ import 'package:ballot_access_pro/shared/widgets/input/app_input.dart';
 import 'package:ballot_access_pro/shared/widgets/app_rich_text.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:ballot_access_pro/shared/constants/app_images.dart';
+import 'package:ballot_access_pro/shared/navigation/role_based_navigation_service.dart';
+import 'package:ballot_access_pro/shared/utils/app_sizer.dart';
 
 class SignInView extends StatefulWidget {
   const SignInView({super.key});
@@ -20,120 +22,159 @@ class SignInView extends StatefulWidget {
 }
 
 class _SignInViewState extends State<SignInView> {
-  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  bool isFormValid = false;
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    emailController.addListener(_validateForm);
-    passwordController.addListener(_validateForm);
+    _emailController.addListener(_validateForm);
+    _passwordController.addListener(_validateForm);
   }
 
   void _validateForm() {
     setState(() {
-      isFormValid = emailController.text.isNotEmpty &&
-          passwordController.text.isNotEmpty &&
-          FormValidators.validateEmail(emailController.text) == null &&
-          FormValidators.validatePassword(passwordController.text) == null;
+      // This method is now empty as the validation logic is moved to _handleSignIn
     });
   }
 
   @override
   void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleSignIn() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      // TODO: Implement actual sign in logic
+      await Future.delayed(const Duration(seconds: 2)); // Simulated API call
+      
+      // TODO: Get actual role from API response
+      final userRole = _emailController.text.contains('admin') ? 'admin' : 'petitioner';
+      
+      if (mounted) {
+        RoleBasedNavigationService.navigateToRoleBasedHome(userRole);
+      }
+    } catch (e) {
+      // TODO: Handle sign in error
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    AppDimension.init(context);
+    
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 22.w),
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(24.w),
           child: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppSpacing.v24(),
-                  Center(
-                    child: Image.asset(
-                      AppImages.logo,
-                      width: 150.w,
-                      height: 150.h,
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(height: 40.h),
+                Text(
+                  'Welcome Back!',
+                  style: AppTextStyle.bold24,
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  'Sign in to continue',
+                  style: AppTextStyle.regular16.copyWith(color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 40.h),
+                AppInput(
+                  controller: _emailController,
+                  labelText: 'Email',
+                  keyboardType: TextInputType.emailAddress,
+                  validator: FormValidators.validateEmail,
+                ),
+                SizedBox(height: 16.h),
+                AppInput(
+                  controller: _passwordController,
+                  labelText: 'Password',
+                  obscureText: true,
+                  validator: FormValidators.validatePassword,
+                ),
+                SizedBox(height: 16.h),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.pushNamed(
+                      context,
+                      AppRoutes.forgotPasswordView,
+                    ),
+                    child: Text(
+                      'Forgot Password?',
+                      style: AppTextStyle.regular14.copyWith(
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
-                  AppSpacing.v32(),
-                  Text(
-                    'Welcome Back!',
-                    style: AppTextStyle.bold20,
+                ),
+                SizedBox(height: 24.h),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _handleSignIn,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: EdgeInsets.symmetric(vertical: 16.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
                   ),
-                  AppSpacing.v32(),
-                  AppInput(
-                    autoValidate: true,
-                    labelText: 'Email',
-                    controller: emailController,
-                    validator: FormValidators.validateEmail,
-                    inputColor: Colors.white,
-                  ),
-                  AppSpacing.v12(),
-                  AppInput(
-                    autoValidate: true,
-                    labelText: 'Password',
-                    controller: passwordController,
-                    obscureText: true,
-                    validator: FormValidators.validatePassword,
-                    inputColor: Colors.white,
-                  ),
-                  AppSpacing.v12(),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        NavigationService.pushNamed(AppRoutes.forgotPasswordView);
-                      },
+                  child: _isLoading
+                      ? SizedBox(
+                          height: 20.h,
+                          width: 20.w,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(
+                          'Sign In',
+                          style: AppTextStyle.semibold16.copyWith(
+                            color: Colors.white,
+                          ),
+                        ),
+                ),
+                SizedBox(height: 24.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Don\'t have an account? ',
+                      style: AppTextStyle.regular14,
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.signUpView,
+                      ),
                       child: Text(
-                        'Forgot Password?',
+                        'Sign Up',
                         style: AppTextStyle.semibold14.copyWith(
                           color: AppColors.primary,
                         ),
                       ),
                     ),
-                  ),
-                  AppSpacing.v30(),
-                  AppButton(
-                    text: 'Sign in',
-                    onPressed: isFormValid
-                        ? () {
-                            if (formKey.currentState!.validate()) {
-                              // TODO: Implement sign in logic
-                              NavigationService.pushReplacementNamed(AppRoutes.homeView);
-                            }
-                          }
-                        : null,
-                  ),
-                  AppSpacing.v45(),
-                  Center(
-                    child: AppRichText(
-                      title: "Don't have an account? ",
-                      subTitle: "Sign up",
-                      titleStyle: AppTextStyle.regular14,
-                      subTitleStyle: AppTextStyle.semibold14.copyWith(
-                        color: AppColors.primary,
-                      ),
-                      recognizer: TapGestureRecognizer()
-                        ..onTap = () {
-                          NavigationService.pushNamed(AppRoutes.signUpView);
-                        },
-                    ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
