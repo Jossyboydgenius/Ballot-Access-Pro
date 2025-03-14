@@ -95,6 +95,8 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
                 AppSpacing.v30(),
                 AppButton(
                   text: 'Reset Password',
+                  textColor: Colors.white,
+                  style: AppTextStyle.semibold16.copyWith(color: Colors.white),
                   onPressed: isFormValid
                       ? () {
                           if (formKey.currentState!.validate()) {
