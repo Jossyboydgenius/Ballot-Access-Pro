@@ -6,6 +6,10 @@ analyzer
 3.3
 file:///Users/dreytech/.pub-cache/hosted/pub.dev/analyzer-6.11.0/
 file:///Users/dreytech/.pub-cache/hosted/pub.dev/analyzer-6.11.0/lib/
+archive
+3.0
+file:///Users/dreytech/.pub-cache/hosted/pub.dev/archive-4.0.4/
+file:///Users/dreytech/.pub-cache/hosted/pub.dev/archive-4.0.4/lib/
 args
 3.3
 file:///Users/dreytech/.pub-cache/hosted/pub.dev/args-2.7.0/
@@ -66,6 +70,10 @@ checked_yaml
 2.19
 file:///Users/dreytech/.pub-cache/hosted/pub.dev/checked_yaml-2.0.3/
 file:///Users/dreytech/.pub-cache/hosted/pub.dev/checked_yaml-2.0.3/lib/
+cli_util
+3.4
+file:///Users/dreytech/.pub-cache/hosted/pub.dev/cli_util-0.4.2/
+file:///Users/dreytech/.pub-cache/hosted/pub.dev/cli_util-0.4.2/lib/
 clock
 2.12
 file:///Users/dreytech/.pub-cache/hosted/pub.dev/clock-1.1.1/
@@ -138,6 +146,10 @@ flutter_bloc
 2.12
 file:///Users/dreytech/.pub-cache/hosted/pub.dev/flutter_bloc-8.1.6/
 file:///Users/dreytech/.pub-cache/hosted/pub.dev/flutter_bloc-8.1.6/lib/
+flutter_launcher_icons
+3.0
+file:///Users/dreytech/.pub-cache/hosted/pub.dev/flutter_launcher_icons-0.14.3/
+file:///Users/dreytech/.pub-cache/hosted/pub.dev/flutter_launcher_icons-0.14.3/lib/
 flutter_lints
 2.19
 file:///Users/dreytech/.pub-cache/hosted/pub.dev/flutter_lints-2.0.3/
@@ -234,6 +246,10 @@ http_parser
 3.4
 file:///Users/dreytech/.pub-cache/hosted/pub.dev/http_parser-4.1.2/
 file:///Users/dreytech/.pub-cache/hosted/pub.dev/http_parser-4.1.2/lib/
+image
+3.0
+file:///Users/dreytech/.pub-cache/hosted/pub.dev/image-4.5.3/
+file:///Users/dreytech/.pub-cache/hosted/pub.dev/image-4.5.3/lib/
 intl
 2.12
 file:///Users/dreytech/.pub-cache/hosted/pub.dev/intl-0.18.1/
@@ -386,6 +402,10 @@ pool
 2.12
 file:///Users/dreytech/.pub-cache/hosted/pub.dev/pool-1.5.1/
 file:///Users/dreytech/.pub-cache/hosted/pub.dev/pool-1.5.1/lib/
+posix
+3.0
+file:///Users/dreytech/.pub-cache/hosted/pub.dev/posix-6.0.1/
+file:///Users/dreytech/.pub-cache/hosted/pub.dev/posix-6.0.1/lib/
 provider
 2.12
 file:///Users/dreytech/.pub-cache/hosted/pub.dev/provider-6.1.2/
