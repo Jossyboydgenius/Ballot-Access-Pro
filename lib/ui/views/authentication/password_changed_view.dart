@@ -40,6 +40,8 @@ class PasswordChangedView extends StatelessWidget {
               AppSpacing.v32(),
               AppButton(
                 text: 'Back to Sign In',
+                textColor: Colors.white,
+                style: AppTextStyle.semibold16.copyWith(color: Colors.white),
                 onPressed: () {
                   NavigationService.pushReplacementNamed(AppRoutes.signInView);
                 },
