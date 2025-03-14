@@ -84,4 +84,35 @@ class FormValidators {
 
     return null;
   }
+
+  static String? validatePhoneNumber(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Phone number is required';
+    }
+    // Basic phone number validation - can be adjusted based on your needs
+    if (!RegExp(r'^\+?[\d\s-]{10,}$').hasMatch(value)) {
+      return 'Please enter a valid phone number';
+    }
+    return null;
+  }
+
+  static String? validateGender(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Gender is required';
+    }
+    if (value.toLowerCase() != 'male' && value.toLowerCase() != 'female') {
+      return 'Please select either male or female';
+    }
+    return null;
+  }
+
+  static String? validateAddress(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Address is required';
+    }
+    if (value.trim().length < 5) {
+      return 'Please enter a valid address';
+    }
+    return null;
+  }
 } 
