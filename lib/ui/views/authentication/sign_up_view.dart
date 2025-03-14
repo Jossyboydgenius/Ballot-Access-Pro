@@ -10,6 +10,8 @@ import 'package:ballot_access_pro/shared/widgets/app_button.dart';
 import 'package:ballot_access_pro/shared/widgets/input/app_input.dart';
 import 'package:ballot_access_pro/shared/widgets/app_rich_text.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
+import 'package:country_picker/country_picker.dart';
+import 'package:ballot_access_pro/shared/widgets/app_back_button.dart';
 
 class SignUpView extends StatefulWidget {
   const SignUpView({super.key});
@@ -24,7 +26,12 @@ class _SignUpViewState extends State<SignUpView> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
+  final TextEditingController genderController = TextEditingController();
+  final TextEditingController countryController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
   bool isFormValid = false;
+  String? selectedCountry;
 
   @override
   void initState() {
@@ -33,6 +40,10 @@ class _SignUpViewState extends State<SignUpView> {
     emailController.addListener(_validateForm);
     passwordController.addListener(_validateForm);
     confirmPasswordController.addListener(_validateForm);
+    addressController.addListener(_validateForm);
+    genderController.addListener(_validateForm);
+    countryController.addListener(_validateForm);
+    phoneController.addListener(_validateForm);
   }
 
   void _validateForm() {
@@ -41,13 +52,20 @@ class _SignUpViewState extends State<SignUpView> {
                    emailController.text.isNotEmpty &&
                    passwordController.text.isNotEmpty &&
                    confirmPasswordController.text.isNotEmpty &&
+                   addressController.text.isNotEmpty &&
+                   genderController.text.isNotEmpty &&
+                   countryController.text.isNotEmpty &&
+                   phoneController.text.isNotEmpty &&
                    FormValidators.isNameValid(nameController.text) == null &&
                    FormValidators.validateEmail(emailController.text) == null &&
                    FormValidators.validatePassword(passwordController.text) == null &&
                    FormValidators.checkIfPasswordSame(
                      confirmPasswordController.text,
                      passwordController.text,
-                   ) == null;
+                   ) == null &&
+                   FormValidators.validateAddress(addressController.text) == null &&
+                   FormValidators.validateGender(genderController.text) == null &&
+                   FormValidators.validatePhoneNumber(phoneController.text) == null;
     });
   }
 
@@ -57,6 +75,10 @@ class _SignUpViewState extends State<SignUpView> {
     emailController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
+    addressController.dispose();
+    genderController.dispose();
+    countryController.dispose();
+    phoneController.dispose();
     super.dispose();
   }
 
@@ -72,12 +94,14 @@ class _SignUpViewState extends State<SignUpView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppSpacing.v24(),
+                  AppSpacing.v12(),
+                  const AppBackButton(),
+                  AppSpacing.v16(),
                   Text(
                     'Create an account to get started',
                     style: AppTextStyle.bold24,
                   ),
-                  AppSpacing.v32(),
+                  AppSpacing.v20(),
                   AppInput(
                     autoValidate: true,
                     labelText: 'Full Name',
@@ -85,7 +109,7 @@ class _SignUpViewState extends State<SignUpView> {
                     validator: FormValidators.isNameValid,
                     inputColor: Colors.white,
                   ),
-                  AppSpacing.v12(),
+                  AppSpacing.v8(),
                   AppInput(
                     autoValidate: true,
                     labelText: 'Email',
@@ -93,7 +117,7 @@ class _SignUpViewState extends State<SignUpView> {
                     validator: FormValidators.validateEmail,
                     inputColor: Colors.white,
                   ),
-                  AppSpacing.v12(),
+                  AppSpacing.v8(),
                   AppInput(
                     autoValidate: true,
                     labelText: 'Password',
@@ -102,7 +126,7 @@ class _SignUpViewState extends State<SignUpView> {
                     validator: FormValidators.validatePassword,
                     inputColor: Colors.white,
                   ),
-                  AppSpacing.v12(),
+                  AppSpacing.v8(),
                   AppInput(
                     autoValidate: true,
                     labelText: 'Confirm Password',
@@ -114,7 +138,115 @@ class _SignUpViewState extends State<SignUpView> {
                     ),
                     inputColor: Colors.white,
                   ),
-                  AppSpacing.v30(),
+                  AppSpacing.v8(),
+                  AppInput(
+                    autoValidate: true,
+                    labelText: 'Address',
+                    controller: addressController,
+                    validator: FormValidators.validateAddress,
+                    inputColor: Colors.white,
+                  ),
+                  AppSpacing.v8(),
+                  AppInput(
+                    autoValidate: true,
+                    labelText: genderController.text.isEmpty ? 'Select Gender' : 'Gender',
+                    controller: genderController,
+                    validator: FormValidators.validateGender,
+                    inputColor: Colors.white,
+                    readOnly: true,
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16.r),
+                          ),
+                          title: Text(
+                            'Select Gender',
+                            style: AppTextStyle.bold20,
+                            textAlign: TextAlign.center,
+                          ),
+                          contentPadding: EdgeInsets.symmetric(vertical: 8.h),
+                          content: SizedBox(
+                            width: MediaQuery.of(context).size.width - 44.w, // Match app padding (22.w from each side)
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ListTile(
+                                  title: Text(
+                                    'Male',
+                                    style: AppTextStyle.regular16,
+                                  ),
+                                  onTap: () {
+                                    setState(() {
+                                      genderController.text = 'Male';
+                                    });
+                                    Navigator.pop(context);
+                                  },
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 24.w),
+                                ),
+                                ListTile(
+                                  title: Text(
+                                    'Female',
+                                    style: AppTextStyle.regular16,
+                                  ),
+                                  onTap: () {
+                                    setState(() {
+                                      genderController.text = 'Female';
+                                    });
+                                    Navigator.pop(context);
+                                  },
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 24.w),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    suffix: const Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  AppSpacing.v8(),
+                  AppInput(
+                    autoValidate: true,
+                    labelText: 'Country',
+                    controller: countryController,
+                    inputColor: Colors.white,
+                    readOnly: true,
+                    onTap: () {
+                      showCountryPicker(
+                        context: context,
+                        showPhoneCode: false,
+                        countryListTheme: CountryListThemeData(
+                          bottomSheetHeight: 400.h,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(20.r),
+                            topRight: Radius.circular(20.r),
+                          ),
+                        ),
+                        onSelect: (Country country) {
+                          setState(() {
+                            selectedCountry = country.name;
+                            countryController.text = country.name;
+                          });
+                        },
+                      );
+                    },
+                  ),
+                  AppSpacing.v8(),
+                  AppInput(
+                    autoValidate: true,
+                    labelText: 'Phone Number',
+                    controller: phoneController,
+                    validator: FormValidators.validatePhoneNumber,
+                    inputColor: Colors.white,
+                    keyboardType: TextInputType.phone,
+                  ),
+                  AppSpacing.v16(),
                   AppButton(
                     text: 'Sign up',
                     textColor: Colors.white,
@@ -128,7 +260,7 @@ class _SignUpViewState extends State<SignUpView> {
                           }
                         : null,
                   ),
-                  AppSpacing.v45(),
+                  AppSpacing.v24(),
                   Center(
                     child: AppRichText(
                       title: "Already have an account? ",
@@ -143,6 +275,7 @@ class _SignUpViewState extends State<SignUpView> {
                         },
                     ),
                   ),
+                  AppSpacing.v16(),
                 ],
               ),
             ),
