@@ -137,6 +137,7 @@ class _LeadsViewState extends State<LeadsView> {
               controller: searchController,
               hintText: 'Search leads...',
               keyboardType: TextInputType.text,
+              prefixIcon: const Icon(Icons.search, color: Colors.grey),
             ),
           ),
           Expanded(
