@@ -74,6 +74,8 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                 AppSpacing.v30(),
                 AppButton(
                   text: 'Send Code',
+                  textColor: Colors.white,
+                  style: AppTextStyle.semibold16.copyWith(color: Colors.white),
                   onPressed: isFormValid
                       ? () {
                           if (formKey.currentState!.validate()) {
