@@ -8,6 +8,7 @@ import 'package:ballot_access_pro/ui/views/authentication/forgot_password_view.d
 import 'package:ballot_access_pro/ui/views/authentication/password_otp_verification_view.dart';
 import 'package:ballot_access_pro/ui/views/authentication/reset_password_view.dart';
 import 'package:ballot_access_pro/ui/views/authentication/password_changed_view.dart';
+import 'package:ballot_access_pro/ui/views/authentication/email_verification_view.dart';
 // import 'package:ballot_access_pro/ui/views/home/home_view.dart';
 
 class AppRoutes {
@@ -19,6 +20,7 @@ class AppRoutes {
   static const String passwordOtpVerificationView = '/password-otp-verification';
   static const String resetPasswordView = '/reset-password';
   static const String passwordChangedView = '/password-changed';
+  static const String emailVerification = '/email-verification';
   // static const String homeView = '/home';
   
   // Role-based Routes
@@ -35,6 +37,9 @@ class AppRoutes {
     passwordOtpVerificationView: (context) => const PasswordOtpVerificationView(),
     resetPasswordView: (context) => const ResetPasswordView(),
     passwordChangedView: (context) => const PasswordChangedView(),
+    emailVerification: (context) => const EmailVerificationView(
+          email: '', // This will be handled through direct navigation
+        ),
     // homeView: (context) => const HomeView(),
     adminDashboardView: (context) => const AdminDashboardView(),
     petitionerHomeView: (context) => const PetitionerHomeView(),
