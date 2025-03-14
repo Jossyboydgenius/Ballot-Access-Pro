@@ -1,7 +1,6 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:ballot_access_pro/shared/navigation/app_routes.dart';
 import 'package:ballot_access_pro/shared/navigation/navigation_service.dart';
 import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/shared/constants/app_spacing.dart';
@@ -12,6 +11,7 @@ import 'package:ballot_access_pro/shared/widgets/app_rich_text.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:country_picker/country_picker.dart';
 import 'package:ballot_access_pro/shared/widgets/app_back_button.dart';
+import 'package:ballot_access_pro/ui/views/authentication/email_verification_view.dart';
 
 class SignUpView extends StatefulWidget {
   const SignUpView({super.key});
@@ -254,8 +254,15 @@ class _SignUpViewState extends State<SignUpView> {
                     onPressed: isFormValid
                         ? () {
                             if (formKey.currentState!.validate()) {
-                              // TODO: Implement sign up logic
-                              NavigationService.pushReplacementNamed(AppRoutes.petitionerHomeView);
+                              // Navigate to email verification
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EmailVerificationView(
+                                    email: emailController.text,
+                                  ),
+                                ),
+                              );
                             }
                           }
                         : null,
