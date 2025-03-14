@@ -11,7 +11,10 @@ class PersonalInformationView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Personal Information'),
+        title: Text(
+          'Personal Information',
+          style: AppTextStyle.semibold16,
+        ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -88,7 +91,7 @@ class PersonalInformationView extends StatelessWidget {
                 Text(
                   title,
                   style: AppTextStyle.regular12.copyWith(
-                    color: Colors.grey,
+                    color: AppColors.grey300,
                   ),
                 ),
                 AppSpacing.v4(),
