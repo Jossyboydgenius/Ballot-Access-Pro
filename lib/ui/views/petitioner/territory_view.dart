@@ -11,7 +11,10 @@ class TerritoryView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Territory'),
+        title: Text(
+          'Territory',
+          style: AppTextStyle.semibold16,
+        ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -62,7 +65,7 @@ class TerritoryView extends StatelessWidget {
                       Text(
                         'Started: Jan 15, 2024',
                         style: AppTextStyle.regular12.copyWith(
-                          color: Colors.grey,
+                          color: AppColors.grey300,
                         ),
                       ),
                     ],
@@ -74,7 +77,7 @@ class TerritoryView extends StatelessWidget {
                   ),
                   AppSpacing.v8(),
                   Text(
-                    'Project description and details go here. This can be a longer text explaining the project goals and requirements.',
+                    'Project description and details go here...',
                     style: AppTextStyle.regular14,
                   ),
                   AppSpacing.v16(),
@@ -105,7 +108,7 @@ class TerritoryView extends StatelessWidget {
         Text(
           label,
           style: AppTextStyle.regular14.copyWith(
-            color: Colors.grey,
+            color: AppColors.grey300,
           ),
         ),
         Text(
