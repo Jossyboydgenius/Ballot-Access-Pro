@@ -4,6 +4,8 @@ import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:ballot_access_pro/shared/navigation/app_routes.dart';
 import 'package:ballot_access_pro/shared/navigation/navigation_service.dart';
+import 'package:ballot_access_pro/ui/views/petitioner/personal_information_view.dart';
+import 'package:ballot_access_pro/ui/views/petitioner/territory_view.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
@@ -28,7 +30,7 @@ class ProfileView extends StatelessWidget {
             SizedBox(height: 24.h),
             _buildStatisticsSection(),
             SizedBox(height: 24.h),
-            _buildMenuSection(),
+            _buildMenuSection(context),
           ],
         ),
       ),
@@ -210,7 +212,7 @@ class ProfileView extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuSection() {
+  Widget _buildMenuSection(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -229,7 +231,12 @@ class ProfileView extends StatelessWidget {
             'Personal Information',
             Icons.person_outline,
             onTap: () {
-              // TODO: Navigate to personal information screen
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const PersonalInformationView(),
+                ),
+              );
             },
           ),
           _buildDivider(),
@@ -237,7 +244,12 @@ class ProfileView extends StatelessWidget {
             'Territory',
             Icons.map_outlined,
             onTap: () {
-              // TODO: Navigate to territory settings screen
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const TerritoryView(),
+                ),
+              );
             },
           ),
           _buildDivider(),
@@ -286,4 +298,16 @@ class ProfileView extends StatelessWidget {
       color: Colors.grey[200],
     );
   }
+}
+
+class MenuItem {
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  const MenuItem({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
 } 
