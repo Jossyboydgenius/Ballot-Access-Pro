@@ -146,6 +146,12 @@
       "languageVersion": "3.4"
     },
     {
+      "name": "country_picker",
+      "rootUri": "file:///Users/dreytech/.pub-cache/hosted/pub.dev/country_picker-2.0.27",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
       "name": "coverage",
       "rootUri": "file:///Users/dreytech/.pub-cache/hosted/pub.dev/coverage-1.11.1",
       "packageUri": "lib/",
@@ -824,6 +830,12 @@
       "languageVersion": "3.5"
     },
     {
+      "name": "universal_io",
+      "rootUri": "file:///Users/dreytech/.pub-cache/hosted/pub.dev/universal_io-2.2.2",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
       "name": "url_launcher",
       "rootUri": "file:///Users/dreytech/.pub-cache/hosted/pub.dev/url_launcher-6.3.1",
       "packageUri": "lib/",
@@ -962,7 +974,7 @@
       "languageVersion": "3.0"
     }
   ],
-  "generated": "2025-03-14T21:30:11.348996Z",
+  "generated": "2025-03-14T22:16:03.052789Z",
   "generator": "pub",
   "generatorVersion": "3.6.1",
   "flutterRoot": "file:///opt/homebrew/Caskroom/flutter/3.27.3/flutter",
