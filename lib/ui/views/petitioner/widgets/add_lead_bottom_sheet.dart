@@ -5,7 +5,7 @@ import 'package:ballot_access_pro/shared/widgets/app_button.dart';
 import 'package:ballot_access_pro/shared/widgets/app_input.dart';
 import 'package:ballot_access_pro/shared/constants/app_spacing.dart';
 
-class AddLeadBottomSheet extends StatelessWidget {
+class AddLeadBottomSheet extends StatefulWidget {
   final Function(String, String, String?, String) onAddLead;
   final String? initialName;
   final String? initialAddress;
@@ -24,12 +24,51 @@ class AddLeadBottomSheet extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final nameController = TextEditingController(text: initialName);
-    final addressController = TextEditingController(text: initialAddress);
-    final phoneController = TextEditingController(text: initialPhone);
-    final notesController = TextEditingController(text: initialNotes);
+  _AddLeadBottomSheetState createState() => _AddLeadBottomSheetState();
+}
 
+class _AddLeadBottomSheetState extends State<AddLeadBottomSheet> {
+  final nameController = TextEditingController();
+  final addressController = TextEditingController();
+  final phoneController = TextEditingController();
+  final notesController = TextEditingController();
+  bool isFormValid = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize with existing values if editing
+    nameController.text = widget.initialName ?? '';
+    addressController.text = widget.initialAddress ?? '';
+    phoneController.text = widget.initialPhone ?? '';
+    notesController.text = widget.initialNotes ?? '';
+    
+    // Add listeners
+    nameController.addListener(_validateForm);
+    addressController.addListener(_validateForm);
+    phoneController.addListener(_validateForm);
+    notesController.addListener(_validateForm);
+  }
+
+  void _validateForm() {
+    setState(() {
+      isFormValid = nameController.text.isNotEmpty &&
+          addressController.text.isNotEmpty &&
+          notesController.text.isNotEmpty;
+    });
+  }
+
+  String? _validatePhone(String? value) {
+    if (value != null && value.isNotEmpty) {
+      if (!RegExp(r'^[0-9-+() ]+$').hasMatch(value)) {
+        return 'Please enter only numbers and valid symbols';
+      }
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -47,7 +86,7 @@ class AddLeadBottomSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              isEditing ? 'Edit Lead' : 'Add New Lead',
+              widget.isEditing ? 'Edit Lead' : 'Add New Lead',
               style: AppTextStyle.bold20,
             ),
             AppSpacing.v16(),
@@ -55,18 +94,24 @@ class AddLeadBottomSheet extends StatelessWidget {
               controller: nameController,
               hintText: 'Full Name',
               keyboardType: TextInputType.name,
+              validator: (value) => value?.isEmpty == true ? 'Name is required' : null,
+              autoValidate: true,
             ),
             AppSpacing.v16(),
             AppInput(
               controller: addressController,
               hintText: 'Address',
               keyboardType: TextInputType.streetAddress,
+              validator: (value) => value?.isEmpty == true ? 'Address is required' : null,
+              autoValidate: true,
             ),
             AppSpacing.v16(),
             AppInput(
               controller: phoneController,
               hintText: 'Phone Number',
               keyboardType: TextInputType.phone,
+              validator: _validatePhone,
+              autoValidate: true,
             ),
             AppSpacing.v16(),
             AppInput(
@@ -74,19 +119,25 @@ class AddLeadBottomSheet extends StatelessWidget {
               hintText: 'Notes',
               maxLines: 3,
               keyboardType: TextInputType.multiline,
+              validator: (value) => value?.isEmpty == true ? 'Notes are required' : null,
+              autoValidate: true,
             ),
             AppSpacing.v24(),
             AppButton(
-              text: isEditing ? 'Save Changes' : 'Add Lead',
-              onPressed: () {
-                onAddLead(
-                  nameController.text,
-                  addressController.text,
-                  phoneController.text.isEmpty ? null : phoneController.text,
-                  notesController.text,
-                );
-                Navigator.pop(context);
-              },
+              text: widget.isEditing ? 'Save Changes' : 'Add Lead',
+              onPressed: isFormValid
+                  ? () {
+                      if (_validatePhone(phoneController.text) == null) {
+                        widget.onAddLead(
+                          nameController.text,
+                          addressController.text,
+                          phoneController.text.isEmpty ? null : phoneController.text,
+                          notesController.text,
+                        );
+                        Navigator.pop(context);
+                      }
+                    }
+                  : null,
               style: AppTextStyle.semibold16.copyWith(color: Colors.white),
             ),
             AppSpacing.v16(),
@@ -94,5 +145,14 @@ class AddLeadBottomSheet extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    addressController.dispose();
+    phoneController.dispose();
+    notesController.dispose();
+    super.dispose();
   }
 } 
