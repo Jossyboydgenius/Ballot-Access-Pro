@@ -12,6 +12,9 @@ class AppInput extends StatelessWidget {
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
   final bool autoValidate;
+  final Widget? prefixIcon;
+  final VoidCallback? onTap;
+  final bool readOnly;
 
   const AppInput({
     super.key,
@@ -23,6 +26,9 @@ class AppInput extends StatelessWidget {
     this.validator,
     this.onChanged,
     this.autoValidate = false,
+    this.prefixIcon,
+    this.onTap,
+    this.readOnly = false,
   });
 
   @override
@@ -34,6 +40,8 @@ class AppInput extends StatelessWidget {
       maxLines: maxLines,
       validator: validator,
       onChanged: onChanged,
+      readOnly: readOnly,
+      onTap: onTap,
       autovalidateMode: autoValidate
           ? AutovalidateMode.onUserInteraction
           : AutovalidateMode.disabled,
@@ -77,6 +85,7 @@ class AppInput extends StatelessWidget {
             color: Colors.red,
           ),
         ),
+        prefixIcon: prefixIcon,
       ),
     );
   }
