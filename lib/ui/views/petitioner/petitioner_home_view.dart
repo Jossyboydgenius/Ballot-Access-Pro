@@ -1,3 +1,4 @@
+import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:flutter/material.dart';
 import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/shared/utils/app_sizer.dart';
@@ -33,6 +34,8 @@ class _PetitionerHomeViewState extends State<PetitionerHomeView> {
         selectedItemColor: AppColors.primary,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
+        selectedLabelStyle: AppTextStyle.bold14,
+        unselectedLabelStyle: AppTextStyle.regular12,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.map_outlined),
@@ -53,4 +56,4 @@ class _PetitionerHomeViewState extends State<PetitionerHomeView> {
       ),
     );
   }
-} 
+}
