@@ -4,57 +4,47 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ConnectionWidget extends StatefulWidget {
+  final Widget Function(BuildContext context, bool isOnline) builder;
   final bool dismissOfflineBanner;
-  final Widget Function(BuildContext, bool) builder;
 
   const ConnectionWidget({
-    super.key,
-    required this.dismissOfflineBanner,
+    Key? key,
     required this.builder,
-  });
+    this.dismissOfflineBanner = true,
+  }) : super(key: key);
 
   @override
   State<ConnectionWidget> createState() => _ConnectionWidgetState();
 }
 
 class _ConnectionWidgetState extends State<ConnectionWidget> {
+  late StreamSubscription<ConnectivityResult> _subscription;
   bool _isOnline = true;
   bool _showBanner = false;
-  late StreamSubscription<ConnectivityResult> _subscription;
 
   @override
   void initState() {
     super.initState();
-    _checkConnectivity();
-    _subscription = Connectivity().onConnectivityChanged.listen(_updateConnectionStatus);
+    _subscription = Connectivity()
+        .onConnectivityChanged
+        .listen((ConnectivityResult result) {
+      setState(() {
+        _isOnline = result != ConnectivityResult.none;
+      });
+    });
+    
+    // Check initial connectivity
+    Connectivity().checkConnectivity().then((result) {
+      setState(() {
+        _isOnline = result != ConnectivityResult.none;
+      });
+    });
   }
 
   @override
   void dispose() {
     _subscription.cancel();
     super.dispose();
-  }
-
-  Future<void> _checkConnectivity() async {
-    final result = await Connectivity().checkConnectivity();
-    _updateConnectionStatus(result);
-  }
-
-  void _updateConnectionStatus(ConnectivityResult result) {
-    final wasOnline = _isOnline;
-    setState(() {
-      _isOnline = result != ConnectivityResult.none;
-
-      // Only show the banner if we're transitioning from online to offline
-      if (wasOnline && !_isOnline) {
-        _showBanner = true;
-      }
-
-      // If we're back online, hide the banner
-      if (_isOnline) {
-        _showBanner = false;
-      }
-    });
   }
 
   Widget _buildOfflineBanner() {

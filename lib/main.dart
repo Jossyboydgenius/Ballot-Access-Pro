@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:ballot_access_pro/core/flavor_config.dart';
 import 'package:ballot_access_pro/shared/navigation/navigation_service.dart';
-import 'package:ballot_access_pro/shared/widgets/widgets.dart';
+// import 'package:ballot_access_pro/shared/widgets/connection_widget.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -51,12 +51,15 @@ class MainApp extends StatelessWidget {
           initialRoute: AppRoutes.initialRoute,
           routes: AppRoutes.routes,
           builder: (context, child) {
-            child = ConnectionWidget(
-              dismissOfflineBanner: false,
-              builder: (context, isOnline) {
-                return BotToastInit()(context, child);
-              },
-            );
+            child = BotToastInit()(context, child);
+            
+            // child = ConnectionWidget(
+            //   dismissOfflineBanner: false,
+            //   builder: (context, isOnline) {
+            //     return child!;
+            //   },
+            // );
+            
             return child;
           },
           navigatorObservers: [BotToastNavigatorObserver()],
