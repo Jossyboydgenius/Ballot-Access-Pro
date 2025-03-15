@@ -12,6 +12,11 @@ import 'package:ballot_access_pro/shared/widgets/app_rich_text.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:ballot_access_pro/shared/constants/app_images.dart';
 import 'package:ballot_access_pro/shared/utils/app_sizer.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:ballot_access_pro/shared/widgets/app_toast.dart';
+import 'bloc/sign_in_bloc.dart';
+import 'bloc/sign_in_event.dart';
+import 'bloc/sign_in_state.dart';
 
 class SignInView extends StatefulWidget {
   const SignInView({super.key});
@@ -50,125 +55,134 @@ class _SignInViewState extends State<SignInView> {
     super.dispose();
   }
 
-  Future<void> _handleSignIn() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      // TODO: Implement actual sign in logic
-      await Future.delayed(const Duration(seconds: 2));
-      
-      NavigationService.pushNamed(AppRoutes.petitionerHomeView);
-    } catch (e) {
-      // TODO: Handle sign in error
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     AppDimension.init(context);
     
-    return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(24.w),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                AppSpacing.v24(),
-                Center(
-                  child: Image.asset(
-                    AppImages.logo,
-                    width: 150.w,
-                    height: 150.h,
-                  ),
-                ),
-                AppSpacing.v8(),
-                Text(
-                  'Welcome Back!',
-                  style: AppTextStyle.bold24,
-                  textAlign: TextAlign.center,
-                ),
-                AppSpacing.v8(),
-                Text(
-                  'Sign in to continue',
-                  style: AppTextStyle.regular16.copyWith(color: Colors.grey[600]),
-                  textAlign: TextAlign.center,
-                ),
-                AppSpacing.v20(),
-                AppInput(
-                  autoValidate: true,
-                  controller: _emailController,
-                  labelText: 'Email',
-                  keyboardType: TextInputType.emailAddress,
-                  validator: FormValidators.validateEmail,
-                  inputColor: Colors.white,
-                ),
-                AppSpacing.v16(),
-                AppInput(
-                  autoValidate: true,
-                  controller: _passwordController,
-                  labelText: 'Password',
-                  obscureText: true,
-                  validator: FormValidators.validatePassword,
-                  inputColor: Colors.white,
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () => NavigationService.pushNamed(
-                      AppRoutes.forgotPasswordView,
+    return BlocListener<SignInBloc, SignInState>(
+      listener: (context, state) {
+        if (state.status == SignInStatus.loading) {
+          setState(() => _isLoading = true);
+        } else {
+          setState(() => _isLoading = false);
+        }
+
+        if (state.status == SignInStatus.failure) {
+          AppToast.showErrorToast(state.errorMessage ?? 'Sign in failed');
+        }
+
+        if (state.status == SignInStatus.success) {
+          NavigationService.pushNamed(AppRoutes.petitionerHomeView);
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(24.w),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AppSpacing.v24(),
+                  Center(
+                    child: Image.asset(
+                      AppImages.logo,
+                      width: 150.w,
+                      height: 150.h,
                     ),
-                    child: Text(
-                      'Forgot Password?',
-                      style: AppTextStyle.regular14.copyWith(
-                        color: AppColors.primary,
+                  ),
+                  AppSpacing.v8(),
+                  Text(
+                    'Welcome Back!',
+                    style: AppTextStyle.bold24,
+                    textAlign: TextAlign.center,
+                  ),
+                  AppSpacing.v8(),
+                  Text(
+                    'Sign in to continue',
+                    style: AppTextStyle.regular16.copyWith(color: Colors.grey[600]),
+                    textAlign: TextAlign.center,
+                  ),
+                  AppSpacing.v20(),
+                  AppInput(
+                    autoValidate: true,
+                    controller: _emailController,
+                    labelText: 'Email',
+                    keyboardType: TextInputType.emailAddress,
+                    validator: FormValidators.validateEmail,
+                    inputColor: Colors.white,
+                  ),
+                  AppSpacing.v16(),
+                  AppInput(
+                    autoValidate: true,
+                    controller: _passwordController,
+                    labelText: 'Password',
+                    obscureText: true,
+                    validator: FormValidators.validatePassword,
+                    inputColor: Colors.white,
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => NavigationService.pushNamed(
+                        AppRoutes.forgotPasswordView,
+                      ),
+                      child: Text(
+                        'Forgot Password?',
+                        style: AppTextStyle.regular14.copyWith(
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                AppSpacing.v24(),
-                AppButton(
-                  text: 'Sign In',
-                  loading: _isLoading,
-                  onPressed: isFormValid
-                      ? () {
-                          if (_formKey.currentState!.validate()) {
-                            _handleSignIn();
+                  AppSpacing.v24(),
+                  AppButton(
+                    text: 'Sign In',
+                    loading: _isLoading,
+                    onPressed: isFormValid
+                        ? () {
+                            if (_formKey.currentState!.validate()) {
+                              _handleSignIn();
+                            }
                           }
-                        }
-                      : null,
-                  style: AppTextStyle.semibold16.copyWith(
-                    color: Colors.white,
-                  ),
-                ),
-                AppSpacing.v45(),
-                Center(
-                  child: AppRichText(
-                    title: "Don't have an account? ",
-                    subTitle: "Sign up",
-                    titleStyle: AppTextStyle.regular14,
-                    subTitleStyle: AppTextStyle.semibold14.copyWith(
-                      color: AppColors.primary,
+                        : null,
+                    style: AppTextStyle.semibold16.copyWith(
+                      color: Colors.white,
                     ),
-                    recognizer: TapGestureRecognizer()
-                      ..onTap = () {
-                        NavigationService.pushNamed(AppRoutes.signUpView);
-                      },
                   ),
-                ),
-              ],
+                  AppSpacing.v45(),
+                  Center(
+                    child: AppRichText(
+                      title: "Don't have an account? ",
+                      subTitle: "Sign up",
+                      titleStyle: AppTextStyle.regular14,
+                      subTitleStyle: AppTextStyle.semibold14.copyWith(
+                        color: AppColors.primary,
+                      ),
+                      recognizer: TapGestureRecognizer()
+                        ..onTap = () {
+                          NavigationService.pushNamed(AppRoutes.signUpView);
+                        },
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _handleSignIn() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    context.read<SignInBloc>().add(
+          SignInSubmitted(
+            email: _emailController.text,
+            password: _passwordController.text,
+          ),
+        );
   }
 } 
