@@ -12,6 +12,11 @@ import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:country_picker/country_picker.dart';
 import 'package:ballot_access_pro/shared/widgets/app_back_button.dart';
 import 'package:ballot_access_pro/ui/views/authentication/email_verification_view.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'bloc/sign_up_bloc.dart';
+import 'bloc/sign_up_event.dart';
+import 'bloc/sign_up_state.dart';
+import 'package:ballot_access_pro/shared/widgets/app_toast.dart';
 
 class SignUpView extends StatefulWidget {
   const SignUpView({super.key});
@@ -32,6 +37,7 @@ class _SignUpViewState extends State<SignUpView> {
   final TextEditingController phoneController = TextEditingController();
   bool isFormValid = false;
   String? selectedCountry;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -84,206 +90,236 @@ class _SignUpViewState extends State<SignUpView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 22.w),
-          child: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppSpacing.v12(),
-                  const AppBackButton(),
-                  AppSpacing.v16(),
-                  Text(
-                    'Create an account to get started',
-                    style: AppTextStyle.bold24,
-                  ),
-                  AppSpacing.v20(),
-                  AppInput(
-                    autoValidate: true,
-                    labelText: 'Full Name',
-                    controller: nameController,
-                    validator: FormValidators.isNameValid,
-                    inputColor: Colors.white,
-                  ),
-                  AppSpacing.v8(),
-                  AppInput(
-                    autoValidate: true,
-                    labelText: 'Email',
-                    controller: emailController,
-                    validator: FormValidators.validateEmail,
-                    inputColor: Colors.white,
-                  ),
-                  AppSpacing.v8(),
-                  AppInput(
-                    autoValidate: true,
-                    labelText: 'Password',
-                    controller: passwordController,
-                    obscureText: true,
-                    validator: FormValidators.validatePassword,
-                    inputColor: Colors.white,
-                  ),
-                  AppSpacing.v8(),
-                  AppInput(
-                    autoValidate: true,
-                    labelText: 'Confirm Password',
-                    controller: confirmPasswordController,
-                    obscureText: true,
-                    validator: (value) => FormValidators.checkIfPasswordSame(
-                      value,
-                      passwordController.text,
+    return BlocListener<SignUpBloc, SignUpState>(
+      listener: (context, state) {
+        if (state.status == SignUpStatus.loading) {
+          setState(() => _isLoading = true);
+        } else {
+          setState(() => _isLoading = false);
+        }
+
+        if (state.status == SignUpStatus.failure) {
+          AppToast.showErrorToast(state.errorMessage ?? 'Sign up failed');
+        }
+
+        if (state.status == SignUpStatus.success) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EmailVerificationView(
+                email: emailController.text,
+                userId: state.user!.id,
+              ),
+            ),
+          );
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 22.w),
+            child: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppSpacing.v12(),
+                    const AppBackButton(),
+                    AppSpacing.v16(),
+                    Text(
+                      'Create an account to get started',
+                      style: AppTextStyle.bold24,
                     ),
-                    inputColor: Colors.white,
-                  ),
-                  AppSpacing.v8(),
-                  AppInput(
-                    autoValidate: true,
-                    labelText: 'Address',
-                    controller: addressController,
-                    validator: FormValidators.validateAddress,
-                    inputColor: Colors.white,
-                  ),
-                  AppSpacing.v8(),
-                  AppInput(
-                    autoValidate: true,
-                    labelText: genderController.text.isEmpty ? 'Select Gender' : 'Gender',
-                    controller: genderController,
-                    validator: FormValidators.validateGender,
-                    inputColor: Colors.white,
-                    readOnly: true,
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.r),
-                          ),
-                          title: Text(
-                            'Select Gender',
-                            style: AppTextStyle.bold20,
-                            textAlign: TextAlign.center,
-                          ),
-                          contentPadding: EdgeInsets.symmetric(vertical: 8.h),
-                          content: SizedBox(
-                            width: MediaQuery.of(context).size.width - 44.w, // Match app padding (22.w from each side)
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                ListTile(
-                                  title: Text(
-                                    'Male',
-                                    style: AppTextStyle.regular16,
+                    AppSpacing.v20(),
+                    AppInput(
+                      autoValidate: true,
+                      labelText: 'Full Name',
+                      controller: nameController,
+                      validator: FormValidators.isNameValid,
+                      inputColor: Colors.white,
+                    ),
+                    AppSpacing.v8(),
+                    AppInput(
+                      autoValidate: true,
+                      labelText: 'Email',
+                      controller: emailController,
+                      validator: FormValidators.validateEmail,
+                      inputColor: Colors.white,
+                    ),
+                    AppSpacing.v8(),
+                    AppInput(
+                      autoValidate: true,
+                      labelText: 'Password',
+                      controller: passwordController,
+                      obscureText: true,
+                      validator: FormValidators.validatePassword,
+                      inputColor: Colors.white,
+                    ),
+                    AppSpacing.v8(),
+                    AppInput(
+                      autoValidate: true,
+                      labelText: 'Confirm Password',
+                      controller: confirmPasswordController,
+                      obscureText: true,
+                      validator: (value) => FormValidators.checkIfPasswordSame(
+                        value,
+                        passwordController.text,
+                      ),
+                      inputColor: Colors.white,
+                    ),
+                    AppSpacing.v8(),
+                    AppInput(
+                      autoValidate: true,
+                      labelText: 'Address',
+                      controller: addressController,
+                      validator: FormValidators.validateAddress,
+                      inputColor: Colors.white,
+                    ),
+                    AppSpacing.v8(),
+                    AppInput(
+                      autoValidate: true,
+                      labelText: genderController.text.isEmpty ? 'Select Gender' : 'Gender',
+                      controller: genderController,
+                      validator: FormValidators.validateGender,
+                      inputColor: Colors.white,
+                      readOnly: true,
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16.r),
+                            ),
+                            title: Text(
+                              'Select Gender',
+                              style: AppTextStyle.bold20,
+                              textAlign: TextAlign.center,
+                            ),
+                            contentPadding: EdgeInsets.symmetric(vertical: 8.h),
+                            content: SizedBox(
+                              width: MediaQuery.of(context).size.width - 44.w, // Match app padding (22.w from each side)
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ListTile(
+                                    title: Text(
+                                      'Male',
+                                      style: AppTextStyle.regular16,
+                                    ),
+                                    onTap: () {
+                                      setState(() {
+                                        genderController.text = 'Male';
+                                      });
+                                      Navigator.pop(context);
+                                    },
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 24.w),
                                   ),
-                                  onTap: () {
-                                    setState(() {
-                                      genderController.text = 'Male';
-                                    });
-                                    Navigator.pop(context);
-                                  },
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 24.w),
-                                ),
-                                ListTile(
-                                  title: Text(
-                                    'Female',
-                                    style: AppTextStyle.regular16,
+                                  ListTile(
+                                    title: Text(
+                                      'Female',
+                                      style: AppTextStyle.regular16,
+                                    ),
+                                    onTap: () {
+                                      setState(() {
+                                        genderController.text = 'Female';
+                                      });
+                                      Navigator.pop(context);
+                                    },
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 24.w),
                                   ),
-                                  onTap: () {
-                                    setState(() {
-                                      genderController.text = 'Female';
-                                    });
-                                    Navigator.pop(context);
-                                  },
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 24.w),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                    suffix: const Icon(
-                      Icons.chevron_right,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  AppSpacing.v8(),
-                  AppInput(
-                    autoValidate: true,
-                    labelText: 'Country',
-                    controller: countryController,
-                    inputColor: Colors.white,
-                    readOnly: true,
-                    onTap: () {
-                      showCountryPicker(
-                        context: context,
-                        showPhoneCode: false,
-                        countryListTheme: CountryListThemeData(
-                          bottomSheetHeight: 400.h,
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(20.r),
-                            topRight: Radius.circular(20.r),
-                          ),
-                        ),
-                        onSelect: (Country country) {
-                          setState(() {
-                            selectedCountry = country.name;
-                            countryController.text = country.name;
-                          });
-                        },
-                      );
-                    },
-                  ),
-                  AppSpacing.v8(),
-                  AppInput(
-                    autoValidate: true,
-                    labelText: 'Phone Number',
-                    controller: phoneController,
-                    validator: FormValidators.validatePhoneNumber,
-                    inputColor: Colors.white,
-                    keyboardType: TextInputType.phone,
-                  ),
-                  AppSpacing.v16(),
-                  AppButton(
-                    text: 'Sign up',
-                    textColor: Colors.white,
-                    style: AppTextStyle.semibold16.copyWith(color: Colors.white),
-                    onPressed: isFormValid
-                        ? () {
-                            if (formKey.currentState!.validate()) {
-                              // Navigate to email verification
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => EmailVerificationView(
-                                    email: emailController.text,
-                                  ),
-                                ),
-                              );
-                            }
-                          }
-                        : null,
-                  ),
-                  AppSpacing.v24(),
-                  Center(
-                    child: AppRichText(
-                      title: "Already have an account? ",
-                      subTitle: "Sign in",
-                      titleStyle: AppTextStyle.regular14,
-                      subTitleStyle: AppTextStyle.semibold14.copyWith(
-                        color: AppColors.primary,
+                        );
+                      },
+                      suffix: const Icon(
+                        Icons.chevron_right,
+                        color: Colors.grey,
                       ),
-                      recognizer: TapGestureRecognizer()
-                        ..onTap = () {
-                          NavigationService.pushReplacementNamed('/sign-in');
-                        },
                     ),
-                  ),
-                  AppSpacing.v16(),
-                ],
+                    AppSpacing.v8(),
+                    AppInput(
+                      autoValidate: true,
+                      labelText: 'Country',
+                      controller: countryController,
+                      inputColor: Colors.white,
+                      readOnly: true,
+                      onTap: () {
+                        showCountryPicker(
+                          context: context,
+                          showPhoneCode: false,
+                          countryListTheme: CountryListThemeData(
+                            bottomSheetHeight: 400.h,
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(20.r),
+                              topRight: Radius.circular(20.r),
+                            ),
+                          ),
+                          onSelect: (Country country) {
+                            setState(() {
+                              selectedCountry = country.name;
+                              countryController.text = country.name;
+                            });
+                          },
+                        );
+                      },
+                    ),
+                    AppSpacing.v8(),
+                    AppInput(
+                      autoValidate: true,
+                      labelText: 'Phone Number',
+                      controller: phoneController,
+                      validator: FormValidators.validatePhoneNumber,
+                      inputColor: Colors.white,
+                      keyboardType: TextInputType.phone,
+                    ),
+                    AppSpacing.v16(),
+                    AppButton(
+                      text: 'Sign up',
+                      loading: _isLoading,
+                      textColor: Colors.white,
+                      style: AppTextStyle.semibold16.copyWith(color: Colors.white),
+                      onPressed: isFormValid
+                          ? () {
+                              if (formKey.currentState!.validate()) {
+                                final nameParts = nameController.text.trim().split(' ');
+                                context.read<SignUpBloc>().add(
+                                      SignUpSubmitted(
+                                        firstName: nameParts[0],
+                                        lastName: nameParts[1],
+                                        email: emailController.text,
+                                        password: passwordController.text,
+                                        phone: phoneController.text,
+                                        address: addressController.text,
+                                        gender: genderController.text,
+                                        country: countryController.text,
+                                      ),
+                                    );
+                              }
+                            }
+                          : null,
+                    ),
+                    AppSpacing.v24(),
+                    Center(
+                      child: AppRichText(
+                        title: "Already have an account? ",
+                        subTitle: "Sign in",
+                        titleStyle: AppTextStyle.regular14,
+                        subTitleStyle: AppTextStyle.semibold14.copyWith(
+                          color: AppColors.primary,
+                        ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () {
+                            NavigationService.pushReplacementNamed('/sign-in');
+                          },
+                      ),
+                    ),
+                    AppSpacing.v16(),
+                  ],
+                ),
               ),
             ),
           ),
