@@ -47,7 +47,7 @@ class PersonalInformationView extends StatelessWidget {
             AppSpacing.v16(),
             _buildInfoCard(
               title: 'Gender',
-              value: 'Male',
+              value: 'male',
               icon: Icons.person_outline,
             ),
             AppSpacing.v16(),
