@@ -303,6 +303,8 @@ class _SignUpViewState extends State<SignUpView> {
                         autoValidateMode: AutovalidateMode.onUserInteraction,
                         selectorTextStyle: AppTextStyle.regular16,
                         textStyle: AppTextStyle.regular16,
+                        textFieldController: phoneController,
+                        // cursorColor: AppColors.primary,
                         inputDecoration: InputDecoration(
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: 16.w,
