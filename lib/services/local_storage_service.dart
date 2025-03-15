@@ -37,4 +37,4 @@ class LocalStorageService {
   }
 
   Future<void> clearAll() async => await fSStorage.deleteAll();
-} 
+}
