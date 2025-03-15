@@ -11,11 +11,13 @@ import 'package:pinput/pinput.dart';
 
 class EmailVerificationView extends StatefulWidget {
   final String email;
+  final String userId;
 
   const EmailVerificationView({
-    super.key,
+    Key? key,
     required this.email,
-  });
+    required this.userId,
+  }) : super(key: key);
 
   @override
   State<EmailVerificationView> createState() => _EmailVerificationViewState();
