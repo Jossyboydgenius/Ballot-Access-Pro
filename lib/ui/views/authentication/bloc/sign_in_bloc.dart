@@ -37,6 +37,7 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
           user: response.data,
         ));
       } else {
+        // Use the error message from the API response
         emit(state.copyWith(
           status: SignInStatus.failure,
           errorMessage: response.message,
@@ -45,7 +46,7 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
     } catch (e) {
       emit(state.copyWith(
         status: SignInStatus.failure,
-        errorMessage: 'Incorrect email or Password',
+        errorMessage: 'An unexpected error occurred. Please try again.',
       ));
     }
   }
