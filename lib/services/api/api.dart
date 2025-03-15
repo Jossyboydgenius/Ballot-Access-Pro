@@ -267,11 +267,27 @@ class Api {
   }
 }
 
-Future<ApiResponse> _response(
-  StreamedResponse response,
-) async {
+Future<ApiResponse> _response(StreamedResponse response) async {
+  String responseBody = await _logResult(response);
+
+  // Handle 401 Unauthorized specifically
+  if (response.statusCode == 401) {
+    return ApiResponse(
+      data: {
+        "message": "Unauthorized access",
+        "status": false,
+        "statusCode": 401,
+        "data": null,
+        "error": {
+          "statusCode": 401
+        }
+      },
+      isSuccessful: false,
+      message: "Unauthorized access",
+    );
+  }
+
   if (response.statusCode == 200 || response.statusCode == 201) {
-    String responseBody = await _logResult(response);
     String? message;
     dynamic decodedJson;
     if (responseBody.isNotEmpty &&
@@ -296,25 +312,40 @@ Future<ApiResponse> _response(
       message: 'success',
     );
   } else if (response.statusCode >= 400 && response.statusCode <= 499) {
-    String responseBody = await _logResult(response);
     if (responseBody.isNotEmpty) {
-      final responseBodyDecoded = jsonDecode(responseBody);
-      debugPrint('Json  $responseBodyDecoded');
+      try {
+        final responseBodyDecoded = jsonDecode(responseBody);
+        debugPrint('Json  $responseBodyDecoded');
 
-      final responseModel = ApiResponse.fromJson(responseBodyDecoded);
-      responseModel.code = response.statusCode;
-      return responseModel;
+        final responseModel = ApiResponse.fromJson(responseBodyDecoded);
+        responseModel.code = response.statusCode;
+        return responseModel;
+      } catch (e) {
+        // If we can't parse the response body, return a formatted error
+        return ApiResponse(
+          data: {
+            "message": responseBody,
+            "status": false,
+            "statusCode": response.statusCode,
+            "data": null,
+            "error": {
+              "statusCode": response.statusCode
+            }
+          },
+          isSuccessful: false,
+          message: responseBody,
+          code: response.statusCode,
+        );
+      }
     }
     return ApiResponse.unknownError(response.statusCode);
   } else if (response.statusCode >= 500 && response.statusCode <= 599) {
-    await _logResult(response);
     return ApiResponse.unknownError(response.statusCode);
   } else {
-    await _logResult(response);
     return ApiResponse(
       isSuccessful: false,
       message: kReleaseMode
-          ? 'Error occurred '
+          ? 'Error occurred'
           : 'Error occurred : ${response.statusCode}',
     );
   }
