@@ -27,7 +27,7 @@ class AuthService {
   }) async {
     debugPrint('Registering user');
     final response = await _api.postData(
-      '/petitioner/add',
+      '/petitioner/register',
       {
         'firstName': firstName,
         'lastName': lastName,
@@ -40,6 +40,17 @@ class AuthService {
       },
       hasHeader: false,
     );
+    
+    // Create a properly formatted response if we get an error
+    if (!response.isSuccessful) {
+      return ApiResponseModel(
+        message: response.message,
+        status: false,
+        statusCode: response.code ?? 400,
+        data: null,
+        error: response.message,
+      );
+    }
     
     return ApiResponseModel.fromJson(
       response.data,
