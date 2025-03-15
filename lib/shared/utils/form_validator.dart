@@ -104,7 +104,8 @@ class FormValidators {
     if (value == null || value.isEmpty) {
       return 'Gender is required';
     }
-    if (value.toLowerCase() != 'male' && value.toLowerCase() != 'female') {
+    final lowercaseGender = value.toLowerCase();
+    if (lowercaseGender != 'male' && lowercaseGender != 'female') {
       return 'Please select either male or female';
     }
     return null;
