@@ -17,6 +17,7 @@ import 'bloc/sign_up_bloc.dart';
 import 'bloc/sign_up_event.dart';
 import 'bloc/sign_up_state.dart';
 import 'package:ballot_access_pro/shared/widgets/app_toast.dart';
+import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 
 class SignUpView extends StatefulWidget {
   const SignUpView({super.key});
@@ -35,6 +36,8 @@ class _SignUpViewState extends State<SignUpView> {
   final TextEditingController genderController = TextEditingController();
   final TextEditingController countryController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
+  PhoneNumber? phoneNumber;
+  bool isPhoneValid = false;
   bool isFormValid = false;
   String? selectedCountry;
   bool _isLoading = false;
@@ -62,6 +65,7 @@ class _SignUpViewState extends State<SignUpView> {
                    genderController.text.isNotEmpty &&
                    countryController.text.isNotEmpty &&
                    phoneController.text.isNotEmpty &&
+                   isPhoneValid &&
                    FormValidators.isNameValid(nameController.text) == null &&
                    FormValidators.validateEmail(emailController.text) == null &&
                    FormValidators.validatePassword(passwordController.text) == null &&
@@ -70,8 +74,7 @@ class _SignUpViewState extends State<SignUpView> {
                      passwordController.text,
                    ) == null &&
                    FormValidators.validateAddress(addressController.text) == null &&
-                   FormValidators.validateGender(genderController.text) == null &&
-                   FormValidators.validatePhoneNumber(phoneController.text) == null;
+                   FormValidators.validateGender(genderController.text) == null;
     });
   }
 
@@ -273,13 +276,45 @@ class _SignUpViewState extends State<SignUpView> {
                       },
                     ),
                     AppSpacing.v8(),
-                    AppInput(
-                      autoValidate: true,
-                      labelText: 'Phone Number',
-                      controller: phoneController,
-                      validator: FormValidators.validatePhoneNumber,
-                      inputColor: Colors.white,
-                      keyboardType: TextInputType.phone,
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(
+                          color: AppColors.grey200,
+                        ),
+                      ),
+                      child: InternationalPhoneNumberInput(
+                        onInputChanged: (PhoneNumber number) {
+                          phoneNumber = number;
+                          phoneController.text = number.phoneNumber ?? '';
+                          _validateForm();
+                        },
+                        onInputValidated: (bool value) {
+                          setState(() {
+                            isPhoneValid = value;
+                            _validateForm();
+                          });
+                        },
+                        selectorConfig: const SelectorConfig(
+                          selectorType: PhoneInputSelectorType.BOTTOM_SHEET,
+                        ),
+                        ignoreBlank: false,
+                        autoValidateMode: AutovalidateMode.onUserInteraction,
+                        selectorTextStyle: AppTextStyle.regular16,
+                        textStyle: AppTextStyle.regular16,
+                        inputDecoration: InputDecoration(
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 16.w,
+                            vertical: 16.h,
+                          ),
+                          border: InputBorder.none,
+                          hintText: 'Phone Number',
+                          hintStyle: AppTextStyle.regular16.copyWith(
+                            color: AppColors.grey300,
+                          ),
+                        ),
+                      ),
                     ),
                     AppSpacing.v16(),
                     AppButton(
@@ -297,7 +332,7 @@ class _SignUpViewState extends State<SignUpView> {
                                         lastName: nameParts[1],
                                         email: emailController.text,
                                         password: passwordController.text,
-                                        phone: phoneController.text,
+                                        phone: phoneNumber?.phoneNumber ?? '',
                                         address: addressController.text,
                                         gender: genderController.text,
                                         country: countryController.text,
