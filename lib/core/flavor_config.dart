@@ -12,4 +12,4 @@ class AppFlavorConfig {
     required this.sentryDsn,
     required this.mixpanelToken,
   });
-} 
+}
