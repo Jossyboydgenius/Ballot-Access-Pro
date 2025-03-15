@@ -31,6 +31,8 @@ class AppColors {
   static const Color lightRed100 = Color(0xFFFFE5E7);
   static const Color bgRed = Color(0xFFFBEAE9);
   static const Color lightRed = Color(0xFFF2BCBA);
+  static const Color bgGreen = Color(0xFFF1F9F5);
+  static const Color lightGreen = Color(0xFFB3D069);
 
   //Primaries
   static const Color primary50 = Color(0xFFFAFAFA);
