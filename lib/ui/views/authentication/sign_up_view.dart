@@ -88,6 +88,11 @@ class _SignUpViewState extends State<SignUpView> {
     super.dispose();
   }
 
+  String get displayGender {
+    if (genderController.text.isEmpty) return '';
+    return genderController.text[0].toUpperCase() + genderController.text.substring(1);
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<SignUpBloc, SignUpState>(
@@ -180,7 +185,7 @@ class _SignUpViewState extends State<SignUpView> {
                     AppInput(
                       autoValidate: true,
                       labelText: genderController.text.isEmpty ? 'Select Gender' : 'Gender',
-                      controller: genderController,
+                      controller: TextEditingController(text: displayGender),
                       validator: FormValidators.validateGender,
                       inputColor: Colors.white,
                       readOnly: true,
@@ -210,7 +215,7 @@ class _SignUpViewState extends State<SignUpView> {
                                     ),
                                     onTap: () {
                                       setState(() {
-                                        genderController.text = 'Male';
+                                        genderController.text = 'male';
                                       });
                                       Navigator.pop(context);
                                     },
@@ -223,7 +228,7 @@ class _SignUpViewState extends State<SignUpView> {
                                     ),
                                     onTap: () {
                                       setState(() {
-                                        genderController.text = 'Female';
+                                        genderController.text = 'female';
                                       });
                                       Navigator.pop(context);
                                     },
