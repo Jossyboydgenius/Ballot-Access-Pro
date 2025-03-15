@@ -1,4 +1,5 @@
 import 'package:ballot_access_pro/ui/views/admin/admin_dashboard_view.dart';
+import 'package:ballot_access_pro/ui/views/authentication/email_verification_view.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/petitioner_home_view.dart';
 import 'package:ballot_access_pro/ui/views/splash_screen_view.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +23,7 @@ class AppRoutes {
   // Role-based Routes
   static const String adminDashboardView = '/admin/dashboard';
   static const String petitionerHomeView = '/petitioner/home';
+  static const String emailVerificationView = '/email-verification';  
 
   static const String initialRoute = splashScreenView;
 
@@ -35,5 +37,9 @@ class AppRoutes {
     passwordChangedView: (context) => const PasswordChangedView(),
     adminDashboardView: (context) => const AdminDashboardView(),
     petitionerHomeView: (context) => const PetitionerHomeView(),
+    emailVerificationView: (context) => const EmailVerificationView(
+          email: '',
+          userId: '',
+        ),
   };
 } 
