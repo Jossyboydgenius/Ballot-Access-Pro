@@ -1,9 +1,7 @@
 import 'package:ballot_access_pro/core/flavor_config.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
-import 'package:image_picker/image_picker.dart';
 import '../services/api/api.dart';
 import '../services/auth_service.dart';
 import '../services/local_storage_service.dart';
@@ -28,8 +26,6 @@ void _registerServices() {
 }
 
 Future<void> _registerExternalDependencies(AppFlavorConfig config) async {
-  locator.registerLazySingleton<FilePicker>(() => FilePicker.platform);
-  locator.registerLazySingleton<ImagePicker>(() => ImagePicker());
   locator.registerLazySingleton<AppFlavorConfig>(() => config);
   locator.registerLazySingleton<FlutterSecureStorage>(
       () => const FlutterSecureStorage());
@@ -37,4 +33,4 @@ Future<void> _registerExternalDependencies(AppFlavorConfig config) async {
 
 void _setUpServices() {}
 
-Future<void> _registerRepositories() async {} 
+Future<void> _registerRepositories() async {}
