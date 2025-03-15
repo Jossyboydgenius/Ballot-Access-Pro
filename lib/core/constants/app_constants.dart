@@ -3,7 +3,6 @@ class AppConstants {
   static const String appVersion = '1.0.0';
   
   // API Constants
-  static const String baseUrl = 'https://api.ballotaccesspro.com'; // Replace with actual API URL
   static const int apiTimeout = 30000; // 30 seconds
   
   // Storage Keys
