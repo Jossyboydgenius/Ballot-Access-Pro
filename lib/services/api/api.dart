@@ -325,4 +325,4 @@ Future<String> _logResult(StreamedResponse response) async {
   debugPrint(
       'Response of ${response.statusCode}  from ${response.request!.url} : $responseBody, reasonPhrase : ${response.reasonPhrase}');
   return responseBody;
-} 
+}
