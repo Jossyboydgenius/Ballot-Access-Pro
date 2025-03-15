@@ -46,7 +46,7 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
     } catch (e) {
       emit(state.copyWith(
         status: SignInStatus.failure,
-        errorMessage: 'An unexpected error occurred. Please try again.',
+        errorMessage: 'Incorrect email or password.',
       ));
     }
   }
