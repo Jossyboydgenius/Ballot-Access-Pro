@@ -1,5 +1,4 @@
 import 'package:ballot_access_pro/core/flavor_config.dart';
-import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import '../services/api/api.dart';
@@ -18,8 +17,6 @@ Future<void> setUpLocator(AppFlavorConfig config) async {
 void registerController() {}
 
 void _registerServices() {
-  locator.registerLazySingleton<FirebaseRemoteConfig>(
-      () => FirebaseRemoteConfig.instance);
   locator.registerLazySingleton<Api>(() => Api());
   locator.registerLazySingleton<LocalStorageService>(() => LocalStorageService());
   locator.registerLazySingleton<AuthService>(() => AuthService());
