@@ -11,7 +11,6 @@ import 'package:ballot_access_pro/shared/widgets/input/app_input.dart';
 import 'package:ballot_access_pro/shared/widgets/app_rich_text.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:ballot_access_pro/shared/constants/app_images.dart';
-import 'package:ballot_access_pro/shared/navigation/role_based_navigation_service.dart';
 import 'package:ballot_access_pro/shared/utils/app_sizer.dart';
 
 class SignInView extends StatefulWidget {
@@ -60,11 +59,7 @@ class _SignInViewState extends State<SignInView> {
       // TODO: Implement actual sign in logic
       await Future.delayed(const Duration(seconds: 2));
       
-      final userRole = _emailController.text.contains('admin') ? 'admin' : 'petitioner';
-      
-      if (mounted) {
-        RoleBasedNavigationService.navigateToRoleBasedHome(userRole);
-      }
+      NavigationService.pushNamed(AppRoutes.petitionerHomeView);
     } catch (e) {
       // TODO: Handle sign in error
     } finally {
