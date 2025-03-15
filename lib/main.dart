@@ -1,7 +1,8 @@
 import 'dart:async';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ballot_access_pro/core/flavor_config.dart';
 import 'package:ballot_access_pro/shared/navigation/navigation_service.dart';
+import 'package:ballot_access_pro/ui/views/authentication/bloc/sign_in_bloc.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -38,29 +39,37 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ScreenUtilInit(
-      designSize: const Size(375, 812),
-      minTextAdapt: true,
-      splitScreenMode: true,
-      builder: (context, child) {
-        return MaterialApp(
-          title: 'Ballot Access Pro',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          navigatorKey: NavigationService.navigatorKey,
-          initialRoute: AppRoutes.initialRoute,
-          routes: AppRoutes.routes,
-          builder: (context, child) {
-            return ConnectionWidget(
-              dismissOfflineBanner: false,
-              builder: (BuildContext context, bool isOnline) {
-                return BotToastInit()(context, child);
-              },
-            );
-          },
-          navigatorObservers: [BotToastNavigatorObserver()],
-        );
-      },
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<SignInBloc>(
+          create: (context) => SignInBloc(),
+        ),
+        // Add other blocs here as needed
+      ],
+      child: ScreenUtilInit(
+        designSize: const Size(375, 812),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        builder: (context, child) {
+          return MaterialApp(
+            title: 'Ballot Access Pro',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            navigatorKey: NavigationService.navigatorKey,
+            initialRoute: AppRoutes.initialRoute,
+            routes: AppRoutes.routes,
+            builder: (context, child) {
+              return ConnectionWidget(
+                dismissOfflineBanner: false,
+                builder: (BuildContext context, bool isOnline) {
+                  return BotToastInit()(context, child);
+                },
+              );
+            },
+            navigatorObservers: [BotToastNavigatorObserver()],
+          );
+        },
+      ),
     );
   }
 }
