@@ -38,22 +38,10 @@ class AppRoutes {
     resetPasswordView: (context) => const ResetPasswordView(),
     passwordChangedView: (context) => const PasswordChangedView(),
     emailVerification: (context) => const EmailVerificationView(
-          email: '', // This will be handled through direct navigation
+          email: '',
         ),
     // homeView: (context) => const HomeView(),
     adminDashboardView: (context) => const AdminDashboardView(),
     petitionerHomeView: (context) => const PetitionerHomeView(),
   };
-
-  // Helper method to navigate based on user role
-  static String getHomeRouteForRole(String role) {
-    switch (role.toLowerCase()) {
-      case 'admin':
-        return adminDashboardView;
-      case 'petitioner':
-        return petitionerHomeView;
-      default:
-        return signInView;
-    }
-  }
 } 
