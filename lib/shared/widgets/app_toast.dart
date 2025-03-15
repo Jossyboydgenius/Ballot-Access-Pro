@@ -104,7 +104,7 @@ class AppToast {
                               if (message.contains('password')) ...[
                                 SizedBox(height: 4.h),
                                 Text(
-                                  'Kindly input the right password.',
+                                  'Kindly input the right details.',
                                   style: AppTextStyle.regular16.copyWith(
                                     color: Colors.black,
                                     fontSize: 12.sp,
