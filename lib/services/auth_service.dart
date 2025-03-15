@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/locator.dart';
+import '../models/api_response_model.dart';
+import '../models/user_model.dart';
 import 'api/api.dart';
-import 'api/api_response.dart';
 
 class AuthService {
   AuthService._privateConstructor();
@@ -14,7 +15,7 @@ class AuthService {
 
   final Api _api = locator<Api>();
 
-  Future<ApiResponse> register({
+  Future<ApiResponseModel<UserModel>> register({
     required String firstName,
     required String lastName,
     required String phone,
@@ -39,10 +40,14 @@ class AuthService {
       },
       hasHeader: false,
     );
-    return response;
+    
+    return ApiResponseModel.fromJson(
+      response.data,
+      (json) => UserModel.fromJson(json),
+    );
   }
 
-  Future<ApiResponse> login({
+  Future<ApiResponseModel<UserModel>> login({
     required String email,
     required String password,
   }) async {
@@ -55,10 +60,14 @@ class AuthService {
       },
       hasHeader: false,
     );
-    return response;
+    
+    return ApiResponseModel.fromJson(
+      response.data,
+      (json) => UserModel.fromJson(json),
+    );
   }
 
-  Future<ApiResponse> resendVerificationEmail({
+  Future<ApiResponseModel<UserModel>> resendVerificationEmail({
     required String userId,
   }) async {
     debugPrint('Resending verification email');
@@ -69,10 +78,14 @@ class AuthService {
       },
       hasHeader: true,
     );
-    return response;
+    
+    return ApiResponseModel.fromJson(
+      response.data,
+      (json) => UserModel.fromJson(json),
+    );
   }
 
-  Future<ApiResponse> verifyEmail({
+  Future<ApiResponseModel<UserModel>> verifyEmail({
     required String code,
     required String userId,
   }) async {
@@ -85,6 +98,10 @@ class AuthService {
       },
       hasHeader: true,
     );
-    return response;
+    
+    return ApiResponseModel.fromJson(
+      response.data,
+      (json) => UserModel.fromJson(json),
+    );
   }
 } 
