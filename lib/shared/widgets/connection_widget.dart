@@ -1,50 +1,62 @@
 import 'dart:async';
+import 'package:ballot_access_pro/shared/constants/app_colors.dart';
+import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ConnectionWidget extends StatefulWidget {
-  final Widget Function(BuildContext context, bool isOnline) builder;
   final bool dismissOfflineBanner;
+  final Widget Function(BuildContext, bool) builder;
 
   const ConnectionWidget({
-    Key? key,
+    super.key,
+    required this.dismissOfflineBanner,
     required this.builder,
-    this.dismissOfflineBanner = true,
-  }) : super(key: key);
+  });
 
   @override
   State<ConnectionWidget> createState() => _ConnectionWidgetState();
 }
 
 class _ConnectionWidgetState extends State<ConnectionWidget> {
-  late StreamSubscription<ConnectivityResult> _subscription;
   bool _isOnline = true;
   bool _showBanner = false;
+  late StreamSubscription<ConnectivityResult> _subscription;
 
   @override
   void initState() {
     super.initState();
-    _subscription = Connectivity()
-        .onConnectivityChanged
-        .listen((ConnectivityResult result) {
-      setState(() {
-        _isOnline = result != ConnectivityResult.none;
-      });
-    });
-    
-    // Check initial connectivity
-    Connectivity().checkConnectivity().then((result) {
-      setState(() {
-        _isOnline = result != ConnectivityResult.none;
-      });
-    });
+    _checkConnectivity();
+    _subscription = Connectivity().onConnectivityChanged.listen(_updateConnectionStatus);
   }
 
   @override
   void dispose() {
     _subscription.cancel();
     super.dispose();
+  }
+
+  Future<void> _checkConnectivity() async {
+    final result = await Connectivity().checkConnectivity();
+    _updateConnectionStatus(result);
+  }
+
+  void _updateConnectionStatus(ConnectivityResult result) {
+    final wasOnline = _isOnline;
+    setState(() {
+      _isOnline = result != ConnectivityResult.none;
+      
+      // Only show the banner if we're transitioning from online to offline
+      if (wasOnline && !_isOnline) {
+        _showBanner = true;
+      }
+      
+      // If we're back online, hide the banner
+      if (_isOnline) {
+        _showBanner = false;
+      }
+    });
   }
 
   Widget _buildOfflineBanner() {
@@ -61,16 +73,18 @@ class _ConnectionWidgetState extends State<ConnectionWidget> {
             child: IntrinsicHeight(
               child: Row(
                 children: [
+                  // Left red accent bar
                   Container(
                     width: 4.w,
                     decoration: BoxDecoration(
-                      color: Colors.red,
+                      color: AppColors.red,
                       borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(4.r),
                         bottomLeft: Radius.circular(4.r),
                       ),
                     ),
                   ),
+                  // Main content
                   Expanded(
                     child: Container(
                       padding: EdgeInsets.all(16.r),
@@ -80,34 +94,36 @@ class _ConnectionWidgetState extends State<ConnectionWidget> {
                           topRight: Radius.circular(4.r),
                           bottomRight: Radius.circular(4.r),
                         ),
-                        border: Border(
-                          top: BorderSide(color: Colors.red[100]!),
-                          right: BorderSide(color: Colors.red[100]!),
-                          bottom: BorderSide(color: Colors.red[100]!),
+                        border: const Border(
+                          top: BorderSide(color: AppColors.lightRed),
+                          right: BorderSide(color: AppColors.lightRed),
+                          bottom: BorderSide(color: AppColors.lightRed),
                         ),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Close button with square container
                           Container(
                             width: 24.w,
                             height: 24.h,
                             decoration: BoxDecoration(
-                              color: Colors.red[50],
+                              color: AppColors.bgRed,
                               borderRadius: BorderRadius.circular(4.r),
-                              border: Border.all(color: Colors.red[100]!),
+                              border: Border.all(color: AppColors.lightRed),
                             ),
                             child: IconButton(
                               padding: EdgeInsets.zero,
                               icon: Icon(
                                 Icons.wifi_off,
                                 size: 16.r,
-                                color: Colors.red,
+                                color: AppColors.red,
                               ),
                               onPressed: null,
                             ),
                           ),
                           SizedBox(width: 12.w),
+                          // Message text
                           Expanded(
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
@@ -115,7 +131,7 @@ class _ConnectionWidgetState extends State<ConnectionWidget> {
                               children: [
                                 Text(
                                   'No internet connection',
-                                  style: TextStyle(
+                                  style: AppTextStyle.regular16.copyWith(
                                     color: Colors.black,
                                     fontSize: 14.sp,
                                     fontWeight: FontWeight.w700,
@@ -124,6 +140,7 @@ class _ConnectionWidgetState extends State<ConnectionWidget> {
                               ],
                             ),
                           ),
+                          // Close button
                           if (!widget.dismissOfflineBanner)
                             GestureDetector(
                               onTap: () {
@@ -134,7 +151,7 @@ class _ConnectionWidgetState extends State<ConnectionWidget> {
                               child: Icon(
                                 Icons.close,
                                 size: 16.r,
-                                color: Colors.red,
+                                color: AppColors.red,
                               ),
                             ),
                         ],
@@ -160,4 +177,4 @@ class _ConnectionWidgetState extends State<ConnectionWidget> {
       ],
     );
   }
-}
+} 
