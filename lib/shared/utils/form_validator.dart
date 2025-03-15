@@ -1,20 +1,24 @@
 class FormValidators {
   static String? isNameValid(String? value) {
-    if (value == null) {
-      return 'Name cannot be empty';
+    if (value == null || value.isEmpty) {
+      return 'Name is required';
     }
-    value = value.trim();
-    final nameParts = value.split(' ');
-    nameParts.removeWhere((element) => element.isEmpty);
-    if (nameParts.length == 1) {
-      return 'Please provide both first and last name';
-    }
-    for (var name in nameParts) {
-      name = name.trim();
 
-      if (name.length < 2) {
-        return "Name must be at least 2 characters";
-      }
+    // Split the name and trim whitespace
+    final nameParts = value.trim().split(' ').where((part) => part.isNotEmpty).toList();
+
+    if (nameParts.length < 2) {
+      return 'Please provide both first name and last name';
+    }
+
+    if (nameParts.length > 2) {
+      return 'Only first name and last name are required';
+    }
+
+    // Check if each part contains only letters
+    final nameRegex = RegExp(r'^[a-zA-Z]+$');
+    if (!nameParts.every((part) => nameRegex.hasMatch(part))) {
+      return 'Names should contain only letters';
     }
 
     return null;
