@@ -26,6 +26,12 @@ class AppColors {
   static const Color green100 = Color(0xFF339933);
   static const Color green200 = Color(0xFF48C79F);
 
+  // Error/Failure Colors
+  static const Color bgRed100 = Color(0xFFFDF4F5);
+  static const Color lightRed100 = Color(0xFFFFE5E7);
+  static const Color bgRed = Color(0xFFFBEAE9);
+  static const Color lightRed = Color(0xFFF2BCBA);
+
   //Primaries
   static const Color primary50 = Color(0xFFFAFAFA);
 
