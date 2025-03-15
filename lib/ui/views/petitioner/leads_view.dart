@@ -6,7 +6,8 @@ import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:ballot_access_pro/shared/widgets/app_input.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/widgets/add_lead_bottom_sheet.dart';
-import 'package:ballot_access_pro/shared/constants/app_spacing.dart';
+import 'package:ballot_access_pro/ui/views/petitioner/widgets/lead_card.dart';
+import 'dart:math';
 
 class LeadsView extends StatefulWidget {
   const LeadsView({super.key});
@@ -22,6 +23,33 @@ class _LeadsViewState extends State<LeadsView> {
   final List<String> statuses = ['Interested', 'Not Interested', 'Follow Up', 'Contacted', 'Pending'];
   final List<Color> statusColors = [Colors.green, Colors.red, Colors.orange, Colors.blue, Colors.purple];
 
+  // Add this list of sample names
+  final List<String> sampleNames = [
+    'Emma Thompson',
+    'James Wilson',
+    'Sophia Garcia',
+    'Michael Chen',
+    'Isabella Martinez',
+    'William Taylor',
+    'Olivia Johnson',
+    'Alexander Lee',
+    'Ava Rodriguez',
+    'Daniel Kim'
+  ];
+
+  final List<String> sampleStreets = [
+    'Maple Avenue',
+    'Oak Street',
+    'Cedar Lane',
+    'Pine Road',
+    'Elm Boulevard',
+    'Birch Drive',
+    'Willow Way',
+    'Spruce Court',
+    'Ash Street',
+    'Sycamore Lane'
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -31,17 +59,24 @@ class _LeadsViewState extends State<LeadsView> {
   }
 
   void _addSampleLeads() {
-    // Add sample leads with random statuses
+    final random = Random();
+    
     leads = List.generate(
-      5,
-      (index) => Lead(
-        id: 'lead_$index',
-        name: 'John Doe ${index + 1}',
-        address: '${123 + index} Main St, City, State',
-        phoneNumber: index % 2 == 0 ? '+1234567890' : null,
-        notes: 'Sample notes for lead ${index + 1}',
-        status: statuses[index % statuses.length],
-      ),
+      10,
+      (index) {
+        final randomName = sampleNames[random.nextInt(sampleNames.length)];
+        final randomStreet = sampleStreets[random.nextInt(sampleStreets.length)];
+        final houseNumber = random.nextInt(999) + 1;
+        
+        return Lead(
+          id: 'lead_$index',
+          name: randomName,
+          address: '$houseNumber $randomStreet, City, State',
+          phoneNumber: random.nextBool() ? '+1${random.nextInt(999999999) + 1000000000}' : null,
+          notes: 'Sample notes for $randomName',
+          status: statuses[random.nextInt(statuses.length)],
+        );
+      },
     );
     filteredLeads = List.from(leads);
   }
@@ -52,7 +87,7 @@ class _LeadsViewState extends State<LeadsView> {
       filteredLeads = leads.where((lead) {
         return lead.name.toLowerCase().contains(query) ||
             lead.address.toLowerCase().contains(query) ||
-            lead.notes.toLowerCase().contains(query);
+            (lead.notes?.toLowerCase().contains(query) ?? false);
       }).toList();
     });
   }
@@ -141,109 +176,7 @@ class _LeadsViewState extends State<LeadsView> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              itemCount: filteredLeads.length,
-              itemBuilder: (context, index) {
-                final lead = filteredLeads[index];
-                return Card(
-                  margin: EdgeInsets.only(bottom: 16.h),
-                  child: Padding(
-                    padding: EdgeInsets.all(16.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              backgroundColor: AppColors.primary,
-                              child: Text(
-                                lead.name.split(' ').map((e) => e[0]).take(2).join(),
-                                style: AppTextStyle.regular14.copyWith(
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                            AppSpacing.h12(),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    lead.name,
-                                    style: AppTextStyle.semibold16,
-                                  ),
-                                  Text(
-                                    lead.address,
-                                    style: AppTextStyle.regular14,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8.w,
-                                vertical: 4.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _getStatusColor(lead.status).withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(4.r),
-                              ),
-                              child: Text(
-                                lead.status,
-                                style: AppTextStyle.regular12.copyWith(
-                                  color: _getStatusColor(lead.status),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        AppSpacing.v12(),
-                        Text(
-                          'Notes: ${lead.notes}',
-                          style: AppTextStyle.regular14,
-                        ),
-                        AppSpacing.v12(),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            if (lead.phoneNumber != null) ...[
-                              TextButton.icon(
-                                onPressed: () => _makePhoneCall(lead.phoneNumber!),
-                                icon: const Icon(
-                                  Icons.phone,
-                                  color: AppColors.primary,
-                                ),
-                                label: Text(
-                                  'Call',
-                                  style: AppTextStyle.regular14.copyWith(
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              ),
-                              AppSpacing.h16(),
-                            ],
-                            TextButton.icon(
-                              onPressed: () => _handleEditLead(lead),
-                              icon: const Icon(
-                                Icons.edit,
-                                color: AppColors.primary,
-                              ),
-                              label: Text(
-                                'Edit',
-                                style: AppTextStyle.regular14.copyWith(
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+            child: _buildLeadsList(),
           ),
         ],
       ),
@@ -266,6 +199,28 @@ class _LeadsViewState extends State<LeadsView> {
           style: AppTextStyle.semibold16.copyWith(color: Colors.white),
         ),
       ),
+    );
+  }
+
+  Widget _buildLeadsList() {
+    if (filteredLeads.isEmpty) {
+      return Center(
+        child: Text(
+          'No leads found',
+          style: AppTextStyle.regular16.copyWith(color: Colors.grey),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: filteredLeads.length,
+      itemBuilder: (context, index) {
+        final lead = filteredLeads[index];
+        return LeadCard(
+          name: lead.name,
+          address: lead.address,
+        );
+      },
     );
   }
 
