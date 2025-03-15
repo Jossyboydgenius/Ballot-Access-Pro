@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ballot_access_pro/core/flavor_config.dart';
 import 'package:ballot_access_pro/shared/navigation/navigation_service.dart';
 import 'package:ballot_access_pro/ui/views/authentication/bloc/sign_in_bloc.dart';
+import 'package:ballot_access_pro/ui/views/authentication/bloc/sign_up_bloc.dart';
 import 'package:bot_toast/bot_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -43,6 +44,9 @@ class MainApp extends StatelessWidget {
       providers: [
         BlocProvider<SignInBloc>(
           create: (context) => SignInBloc(),
+        ),
+        BlocProvider<SignUpBloc>(
+          create: (context) => SignUpBloc(),
         ),
         // Add other blocs here as needed
       ],
