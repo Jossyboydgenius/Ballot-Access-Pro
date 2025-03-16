@@ -1,6 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../core/locator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
 
 class LocalStorageKeys {
   static String refreshToken = 'refreshToken';
@@ -18,11 +19,19 @@ class LocalStorageService {
   final FlutterSecureStorage _storage = locator<FlutterSecureStorage>();
 
   Future<String?> getStorageValue(String key) async {
-    return await _storage.read(key: key);
+    try {
+      return await _storage.read(key: key);
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<void> saveStorageValue(String key, String value) async {
-    await _storage.write(key: key, value: value);
+    try {
+      await _storage.write(key: key, value: value);
+    } catch (e) {
+      debugPrint('Error saving to storage: $e');
+    }
   }
 
   Future<void> clearAuthAll() async {
@@ -39,7 +48,11 @@ class LocalStorageService {
   Future<void> clearAll() async => await _storage.deleteAll();
 
   Future<void> clearToken() async {
-    await _storage.delete(key: LocalStorageKeys.accessToken);
+    try {
+      await _storage.delete(key: LocalStorageKeys.accessToken);
+    } catch (e) {
+      debugPrint('Error clearing token: $e');
+    }
   }
 
   Future<void> removeStorageValue(String key) async {
