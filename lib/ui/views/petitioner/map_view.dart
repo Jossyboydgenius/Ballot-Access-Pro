@@ -7,7 +7,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
-import 'package:ballot_access_pro/core/config/env_config.dart';
 
 class MapView extends StatefulWidget {
   const MapView({super.key});
@@ -104,7 +103,9 @@ class _MapViewState extends State<MapView> {
       body: Stack(
         children: [
           _currentPosition == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(child: CircularProgressIndicator(
+                color: AppColors.primary,
+              ))
               : GoogleMap(
                   initialCameraPosition: CameraPosition(
                     target: _currentPosition!,
