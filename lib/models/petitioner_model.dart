@@ -73,7 +73,9 @@ class PetitionerModel {
       signatures: json['signatures'] as int,
       pendingRevisits: json['pendingRevisits'] as int,
       housevisited: json['housevisited'] as int,
-      successRate: (json['successRate'] as num).toDouble(),
+      successRate: json['successRate'] is String 
+          ? double.parse(json['successRate'])
+          : (json['successRate'] as num).toDouble(),
     );
   }
 }
