@@ -33,6 +33,13 @@ class AppColors {
   static const Color lightRed = Color(0xFFF2BCBA);
   static const Color bgGreen = Color(0xFFF1F9F5);
   static const Color lightGreen = Color(0xFFB3D069);
+  static const Color grey = Color(0xFF757575);
+  static const Color success = Color(0xFF4CAF50);
+  static const Color error = Color(0xFFE53935);
+  static const Color warning = Color(0xFFFFA000);
+  static const Color background = Color(0xFFF5F5F5);
+
+
 
   //Primaries
   static const Color primary50 = Color(0xFFFAFAFA);
