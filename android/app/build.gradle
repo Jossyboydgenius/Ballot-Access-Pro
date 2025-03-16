@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.ballotaccesspro.ballot_access_pro"
+    namespace = "com.ballotaccesspro.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
