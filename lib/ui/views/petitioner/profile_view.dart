@@ -6,38 +6,72 @@ import 'package:ballot_access_pro/shared/navigation/app_routes.dart';
 import 'package:ballot_access_pro/shared/navigation/navigation_service.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/personal_information_view.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/territory_view.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'bloc/profile_bloc.dart';
+import 'bloc/profile_state.dart';
+import 'bloc/profile_event.dart';
+import 'package:ballot_access_pro/shared/widgets/app_loading.dart';
+import 'package:ballot_access_pro/shared/widgets/app_toast.dart';
+import 'package:get_it/get_it.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Profile',
-          style: AppTextStyle.bold20,
+    return BlocProvider(
+      create: (context) => GetIt.I<ProfileBloc>()..add(const LoadProfile()),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Profile',
+            style: AppTextStyle.bold20,
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
         ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          children: [
-            _buildProfileHeader(),
-            SizedBox(height: 24.h),
-            _buildStatisticsSection(),
-            SizedBox(height: 24.h),
-            _buildMenuSection(context),
-          ],
+        body: BlocConsumer<ProfileBloc, ProfileState>(
+          listener: (context, state) {
+            if (state.status == ProfileStatus.failure) {
+              AppToast.showErrorToast(state.error ?? 'Failed to load profile');
+            }
+          },
+          builder: (context, state) {
+            if (state.status == ProfileStatus.loading) {
+              return const AppLoading();
+            }
+
+            if (state.petitioner == null) {
+              return const Center(
+                child: Text('No profile data available'),
+              );
+            }
+
+            return SingleChildScrollView(
+              padding: EdgeInsets.all(16.w),
+              child: Column(
+                children: [
+                  _buildProfileHeader(state),
+                  SizedBox(height: 24.h),
+                  _buildStatisticsSection(state),
+                  SizedBox(height: 24.h),
+                  _buildMenuSection(context),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(ProfileState state) {
+    final petitioner = state.petitioner!;
+    final fullName = '${petitioner.firstName} ${petitioner.lastName}';
+    final initials = '${petitioner.firstName[0]}${petitioner.lastName[0]}';
+    final isActive = petitioner.status.toLowerCase() == 'active';
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(16.w),
@@ -54,19 +88,25 @@ class ProfileView extends StatelessWidget {
       ),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 50.r,
-            backgroundColor: AppColors.primary.withOpacity(0.1),
-            child: Text(
-              'JD',
-              style: AppTextStyle.bold24.copyWith(
-                color: AppColors.primary,
+          if (petitioner.picture != null)
+            CircleAvatar(
+              radius: 50.r,
+              backgroundImage: NetworkImage(petitioner.picture!),
+            )
+          else
+            CircleAvatar(
+              radius: 50.r,
+              backgroundColor: AppColors.primary.withOpacity(0.1),
+              child: Text(
+                initials,
+                style: AppTextStyle.bold24.copyWith(
+                  color: AppColors.primary,
+                ),
               ),
             ),
-          ),
           SizedBox(height: 16.h),
           Text(
-            'John Doe',
+            fullName,
             style: AppTextStyle.bold20,
           ),
           SizedBox(height: 4.h),
@@ -83,22 +123,24 @@ class ProfileView extends StatelessWidget {
               vertical: 6.h,
             ),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.1),
+              color: isActive
+                  ? Colors.green.withOpacity(0.1)
+                  : Colors.red.withOpacity(0.1),
               borderRadius: BorderRadius.circular(20.r),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.check_circle,
-                  color: Colors.green,
+                  isActive ? Icons.check_circle : Icons.cancel,
+                  color: isActive ? Colors.green : Colors.red,
                   size: 16.r,
                 ),
                 SizedBox(width: 4.w),
                 Text(
-                  'Active',
+                  petitioner.status,
                   style: AppTextStyle.regular12.copyWith(
-                    color: Colors.green,
+                    color: isActive ? Colors.green : Colors.red,
                   ),
                 ),
               ],
@@ -109,7 +151,8 @@ class ProfileView extends StatelessWidget {
     );
   }
 
-  Widget _buildStatisticsSection() {
+  Widget _buildStatisticsSection(ProfileState state) {
+    final petitioner = state.petitioner!;
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -136,7 +179,7 @@ class ProfileView extends StatelessWidget {
               Expanded(
                 child: _buildStatItem(
                   'Houses Visited',
-                  '1,234',
+                  petitioner.housevisited.toString(),
                   Icons.home,
                   Colors.blue,
                 ),
@@ -145,7 +188,7 @@ class ProfileView extends StatelessWidget {
               Expanded(
                 child: _buildStatItem(
                   'Success Rate',
-                  '75%',
+                  '${petitioner.successRate.toStringAsFixed(1)}%',
                   Icons.check_circle,
                   Colors.green,
                 ),
@@ -158,7 +201,9 @@ class ProfileView extends StatelessWidget {
               Expanded(
                 child: _buildStatItem(
                   'Territory',
-                  'Zone A',
+                  petitioner.territories.isNotEmpty 
+                      ? petitioner.territories.first 
+                      : 'No Territory',
                   Icons.map,
                   Colors.orange,
                 ),
@@ -167,7 +212,7 @@ class ProfileView extends StatelessWidget {
               Expanded(
                 child: _buildStatItem(
                   'Pending Revisits',
-                  '45',
+                  petitioner.pendingRevisits.toString(),
                   Icons.calendar_today,
                   Colors.purple,
                 ),
@@ -258,6 +303,7 @@ class ProfileView extends StatelessWidget {
             Icons.logout,
             color: Colors.red,
             onTap: () {
+              context.read<ProfileBloc>().add(SignOut());
               NavigationService.pushReplacementNamed(AppRoutes.signInView);
             },
           ),
