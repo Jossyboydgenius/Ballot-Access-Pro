@@ -17,7 +17,7 @@ import 'bloc/sign_up_bloc.dart';
 import 'bloc/sign_up_event.dart';
 import 'bloc/sign_up_state.dart';
 import 'package:ballot_access_pro/shared/widgets/app_toast.dart';
-import 'package:intl_phone_number_input/intl_phone_number_input.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 
 class SignUpView extends StatefulWidget {
   const SignUpView({super.key});
@@ -36,7 +36,6 @@ class _SignUpViewState extends State<SignUpView> {
   final TextEditingController genderController = TextEditingController();
   final TextEditingController countryController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
-  PhoneNumber? phoneNumber;
   bool isPhoneValid = false;
   bool isFormValid = false;
   String? selectedCountry;
@@ -65,7 +64,6 @@ class _SignUpViewState extends State<SignUpView> {
                    genderController.text.isNotEmpty &&
                    countryController.text.isNotEmpty &&
                    phoneController.text.isNotEmpty &&
-                   isPhoneValid &&
                    FormValidators.isNameValid(nameController.text) == null &&
                    FormValidators.validateEmail(emailController.text) == null &&
                    FormValidators.validatePassword(passwordController.text) == null &&
@@ -276,47 +274,37 @@ class _SignUpViewState extends State<SignUpView> {
                       },
                     ),
                     AppSpacing.v8(),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8.r),
-                        border: Border.all(
-                          color: AppColors.grey200,
+                    IntlPhoneField(
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
+                        labelText: 'Phone Number',
+                        labelStyle: AppTextStyle.regular16.copyWith(
+                          color: AppColors.grey300,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                          borderSide: const BorderSide(color: AppColors.grey200),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                          borderSide: const BorderSide(color: AppColors.grey200),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8.r),
+                          borderSide: const BorderSide(color: AppColors.primary),
                         ),
                       ),
-                      child: InternationalPhoneNumberInput(
-                        onInputChanged: (PhoneNumber number) {
-                          phoneNumber = number;
-                          phoneController.text = number.phoneNumber ?? '';
-                          _validateForm();
-                        },
-                        onInputValidated: (bool value) {
-                          setState(() {
-                            isPhoneValid = value;
-                            _validateForm();
-                          });
-                        },
-                        selectorConfig: const SelectorConfig(
-                          selectorType: PhoneInputSelectorType.BOTTOM_SHEET,
-                        ),
-                        ignoreBlank: false,
-                        autoValidateMode: AutovalidateMode.onUserInteraction,
-                        selectorTextStyle: AppTextStyle.regular16,
-                        textStyle: AppTextStyle.regular16,
-                        textFieldController: phoneController,
-                        // cursorColor: AppColors.primary,
-                        inputDecoration: InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 16.w,
-                            vertical: 16.h,
-                          ),
-                          border: InputBorder.none,
-                          hintText: 'Phone Number',
-                          hintStyle: AppTextStyle.regular16.copyWith(
-                            color: AppColors.grey300,
-                          ),
-                        ),
-                      ),
+                      initialCountryCode: 'US',
+                      onChanged: (phone) {
+                        phoneController.text = phone.completeNumber;
+                      },
+                      validator: (phone) {
+                        if (phone == null || !phone.isValidNumber()) {
+                          return 'Please enter a valid phone number';
+                        }
+                        return null;
+                      },
                     ),
                     AppSpacing.v16(),
                     AppButton(
@@ -334,7 +322,7 @@ class _SignUpViewState extends State<SignUpView> {
                                         lastName: nameParts[1],
                                         email: emailController.text,
                                         password: passwordController.text,
-                                        phone: phoneNumber?.phoneNumber ?? '',
+                                        phone: phoneController.text,
                                         address: addressController.text,
                                         gender: genderController.text,
                                         country: countryController.text,
