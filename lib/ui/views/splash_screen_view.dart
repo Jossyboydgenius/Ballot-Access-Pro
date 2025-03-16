@@ -3,6 +3,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:ballot_access_pro/shared/navigation/app_routes.dart';
 import 'package:ballot_access_pro/shared/navigation/navigation_service.dart';
 import 'package:ballot_access_pro/shared/constants/app_images.dart';
+import 'package:ballot_access_pro/services/local_storage_service.dart';
+import 'package:ballot_access_pro/core/locator.dart';
 
 class SplashScreenView extends StatefulWidget {
   const SplashScreenView({super.key});
@@ -12,15 +14,24 @@ class SplashScreenView extends StatefulWidget {
 }
 
 class _SplashScreenViewState extends State<SplashScreenView> {
+  final LocalStorageService _storageService = locator<LocalStorageService>();
+
   @override
   void initState() {
     super.initState();
-    _navigateToSignIn();
+    _checkAuthState();
   }
 
-  Future<void> _navigateToSignIn() async {
+  Future<void> _checkAuthState() async {
     await Future.delayed(const Duration(seconds: 3));
-    if (mounted) {
+    
+    if (!mounted) return;
+    
+    final token = await _storageService.getStorageValue(LocalStorageKeys.accessToken);
+    
+    if (token != null) {
+      NavigationService.pushReplacementNamed(AppRoutes.petitionerHomeView);
+    } else {
       NavigationService.pushReplacementNamed(AppRoutes.signInView);
     }
   }
