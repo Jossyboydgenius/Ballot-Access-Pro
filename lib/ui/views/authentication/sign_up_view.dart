@@ -90,8 +90,9 @@ class _SignUpViewState extends State<SignUpView> {
   }
 
   String get displayGender {
-    if (genderController.text.isEmpty) return '';
-    return genderController.text[0].toUpperCase() + genderController.text.substring(1);
+    return genderController.text.isNotEmpty 
+        ? genderController.text[0].toUpperCase() + genderController.text.substring(1)
+        : '';
   }
 
   @override
@@ -185,19 +186,13 @@ class _SignUpViewState extends State<SignUpView> {
                     AppSpacing.v8(),
                     AppInput(
                       autoValidate: true,
-                      labelText: genderController.text.isEmpty ? 'Select Gender' : 'Gender',
-                      controller: TextEditingController(text: displayGender),
-                      validator: FormValidators.validateGender,
-                      inputColor: Colors.white,
+                      labelText: 'Gender',
+                      controller: genderController,
                       readOnly: true,
                       onTap: () {
                         showDialog(
                           context: context,
                           builder: (context) => AlertDialog(
-                            backgroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16.r),
-                            ),
                             title: Text(
                               'Select Gender',
                               style: AppTextStyle.bold20,
@@ -297,14 +292,22 @@ class _SignUpViewState extends State<SignUpView> {
                       ),
                       initialCountryCode: 'US',
                       onChanged: (phone) {
-                        phoneController.text = phone.completeNumber;
+                        if (phone.number.length >= 10) {
+                          phoneController.text = phone.completeNumber;
+                        }
                       },
                       validator: (phone) {
-                        if (phone == null || !phone.isValidNumber()) {
+                        if (phone == null) return 'Please enter a phone number';
+                        try {
+                          if (phone.number.length < 10) {
+                            return 'Phone number is too short';
+                          }
+                          return null;
+                        } catch (e) {
                           return 'Please enter a valid phone number';
                         }
-                        return null;
                       },
+                      disableLengthCheck: true,
                     ),
                     AppSpacing.v16(),
                     AppButton(
