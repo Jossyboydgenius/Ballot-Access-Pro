@@ -102,11 +102,11 @@ class FormValidators {
 
   static String? validateGender(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Gender is required';
+      return 'Please select a gender';
     }
     final lowercaseGender = value.toLowerCase();
     if (lowercaseGender != 'male' && lowercaseGender != 'female') {
-      return 'Please select either male or female';
+      return 'Please select a valid gender';
     }
     return null;
   }
