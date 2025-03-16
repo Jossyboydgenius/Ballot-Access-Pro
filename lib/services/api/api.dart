@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:http/http.dart';
 import '../../core/flavor_config.dart';
 import '../../core/locator.dart';
@@ -24,64 +25,51 @@ class Api {
 
   Future<ApiResponse> postData(
     String url,
-    body, {
+    dynamic body, {
     bool hasHeader = false,
     bool isMultiPart = false,
     File? fileList,
     String? customBaseUrl,
   }) async {
     try {
-      dynamic request;
-      final fullUrl =
-          customBaseUrl != null ? '$customBaseUrl$url' : '$_baseUrl$url';
+      final token = await localStorageService.getStorageValue(LocalStorageKeys.accessToken);
+      final headers = {
+        'Content-Type': 'application/json',
+        if (hasHeader && token != null) 'Authorization': 'Bearer $token',
+      };
+
+      final fullUrl = customBaseUrl != null ? '$customBaseUrl$url' : '$_baseUrl$url';
+      debugPrint('POST request to $fullUrl  ==> body: $body');
 
       if (isMultiPart) {
-        request = MultipartRequest('POST', Uri.parse(fullUrl));
+        final request = http.MultipartRequest('POST', Uri.parse(fullUrl));
+        request.headers.addAll(headers);
 
         if (fileList != null) {
           await _addFiles(fileList, body, request);
         }
-      } else {
-        request = Request('POST', Uri.parse(fullUrl));
-      }
+        if (body != null) {
+          request.fields.addAll(Map<String, String>.from(body));
+        }
 
-      return await _sendRequest(
-        request,
-        hasHeader,
-        body: body,
-        isMultiPart: isMultiPart,
-      );
-    } on SocketException catch (e) {
-      debugPrint('$e');
-      debugPrint('SocketException: $e');
-      return ApiResponse(
-        data: null,
-        isSuccessful: false,
-        message: 'No Internet connection',
-      );
-    } on TimeoutException catch (e) {
-      debugPrint('TimeoutException: $e');
-      return ApiResponse.timeout();
-    } on ClientException catch (e) {
-      debugPrint('Error: $e');
-      return ApiResponse(
-        data: null,
-        isSuccessful: false,
-        message: 'There was a problem connecting to the server',
-      );
-    } on Exception catch (e) {
-      debugPrint('Error: $e');
-      return ApiResponse(
-        data: null,
-        isSuccessful: false,
-        message: 'Something went wrong',
-      );
+        final streamedResponse = await request.send();
+        final response = await http.Response.fromStream(streamedResponse);
+        return _handleResponse(response);
+      } else {
+        final response = await http.post(
+          Uri.parse(fullUrl),
+          body: jsonEncode(body),
+          headers: headers,
+        );
+        return _handleResponse(response);
+      }
     } catch (e) {
-      debugPrint('$e');
+      debugPrint('Error in POST request: $e');
       return ApiResponse(
-        data: null,
         isSuccessful: false,
-        message: 'Something went wrong',
+        code: 500,
+        message: e.toString(),
+        data: null,
       );
     }
   }
@@ -157,42 +145,30 @@ class Api {
     }
   }
 
-  Future<ApiResponse> getData(
-    String url, {
-    body,
-    bool hasHeader = false,
-    String? key,
-    bool retry = false,
-  }) async {
-    Request request;
+  Future<ApiResponse> getData(String url, {bool hasHeader = true}) async {
     try {
-      request = Request(
-        'GET',
-        Uri.parse(_baseUrl + url),
+      final token = await localStorageService.getStorageValue(LocalStorageKeys.accessToken);
+      final headers = {
+        'Content-Type': 'application/json',
+        if (hasHeader && token != null) 'Authorization': 'Bearer $token',
+      };
+
+      debugPrint('GET request to $_baseUrl$url');
+      debugPrint('GET request to $_baseUrl$url  ==> headers: $headers');
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl$url'),
+        headers: headers,
       );
 
-      debugPrint('GET request to ${request.url}  ');
-      return await _sendRequest(
-        request,
-        hasHeader,
-        body: body,
-      );
-    } on SocketException catch (e) {
-      debugPrint('SocketException: $e');
+      return _handleResponse(response);
+    } catch (e) {
+      debugPrint('Error in GET request: $e');
       return ApiResponse(
-        data: null,
         isSuccessful: false,
-        message: 'No Internet connection',
-      );
-    } on TimeoutException catch (e) {
-      debugPrint('TimeoutException: $e');
-      return ApiResponse.timeout();
-    } on Exception catch (e) {
-      debugPrint('Error signing in with: $e');
-      return ApiResponse(
-        data: null,
-        isSuccessful: false,
+        code: 500,
         message: e.toString(),
+        data: null,
       );
     }
   }
@@ -263,7 +239,55 @@ class Api {
     request.headers.addAll(networkHeaders);
     final response = await request.send();
 
-    return await _response(response);
+    return await _handleResponse(response);
+  }
+
+  ApiResponse _handleResponse(http.Response response) {
+    debugPrint('Response of ${response.statusCode} from ${response.request?.url} : ${response.body}');
+
+    try {
+      final responseBody = response.body;
+      final Map<String, dynamic> parsed = jsonDecode(responseBody);
+
+      if (response.statusCode == 401) {
+        return ApiResponse(
+          data: {
+            "message": "Unauthorized access",
+            "status": false,
+            "statusCode": 401,
+            "data": null,
+            "error": {"statusCode": 401}
+          },
+          isSuccessful: false,
+          message: "Unauthorized access",
+          code: 401,
+        );
+      }
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return ApiResponse(
+          isSuccessful: true,
+          code: response.statusCode,
+          message: parsed['message'] ?? 'Success',
+          data: parsed,
+        );
+      }
+
+      return ApiResponse(
+        isSuccessful: false,
+        code: response.statusCode,
+        message: parsed['message'] ?? 'Error occurred',
+        data: parsed,
+      );
+    } catch (e) {
+      debugPrint('Error parsing response: $e');
+      return ApiResponse(
+        isSuccessful: false,
+        code: response.statusCode,
+        message: 'Error parsing response',
+        data: null,
+      );
+    }
   }
 }
 
