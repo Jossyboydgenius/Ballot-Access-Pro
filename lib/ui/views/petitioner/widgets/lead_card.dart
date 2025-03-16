@@ -1,24 +1,35 @@
+import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
+import 'package:intl/intl.dart';
+import 'package:ballot_access_pro/models/lead_model.dart';
 
 class LeadCard extends StatelessWidget {
-  final String name;
-  final String address;
-  // final String status; // Commented out as requested
-  // final Color statusColor; // Commented out as requested
-  // final VoidCallback onCall; // Commented out as requested
-  // final VoidCallback onEdit; // Commented out as requested
+  final LeadModel lead;
 
   const LeadCard({
     Key? key,
-    required this.name,
-    required this.address,
-    // required this.status, // Commented out as requested
-    // required this.statusColor, // Commented out as requested
-    // required this.onCall, // Commented out as requested
-    // required this.onEdit, // Commented out as requested
+    required this.lead,
   }) : super(key: key);
+
+  String get fullName => '${lead.firstName} ${lead.lastName}';
+  String get initials => '${lead.firstName[0]}${lead.lastName[0]}'.toUpperCase();
+  String get formattedDate => DateFormat('MMM dd, yyyy').format(lead.createdAt);
+
+  Color _getStatusColor(String? status) {
+    if (status == null) return Colors.grey;
+    switch (status.toLowerCase()) {
+      case 'comeback':
+        return Colors.orange;
+      case 'not home':
+        return Colors.blue;
+      case 'bas':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,9 +54,9 @@ class LeadCard extends StatelessWidget {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: AppColors.primary,
                   child: Text(
-                    name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                    initials,
                     style: AppTextStyle.semibold16.copyWith(color: Colors.white),
                   ),
                 ),
@@ -55,62 +66,65 @@ class LeadCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        name,
+                        fullName,
                         style: AppTextStyle.semibold16,
                       ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        address,
-                        style: AppTextStyle.regular14.copyWith(
-                          color: Colors.grey[600],
+                      if (lead.address != null) ...[
+                        SizedBox(height: 4.h),
+                        Text(
+                          lead.address!,
+                          style: AppTextStyle.regular14.copyWith(
+                            color: Colors.grey[600],
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
-                // Commented out status indicator
-                /*Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 6.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16.r),
-                  ),
-                  child: Text(
-                    status,
-                    style: AppTextStyle.medium14.copyWith(
-                      color: statusColor,
+                if (lead.visit?.status != null)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 6.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(lead.visit?.status).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16.r),
+                    ),
+                    child: Text(
+                      lead.visit!.status.toUpperCase(),
+                      style: AppTextStyle.medium14.copyWith(
+                        color: _getStatusColor(lead.visit?.status),
+                      ),
                     ),
                   ),
-                ),*/
               ],
             ),
-            // Commented out action buttons
-            /*SizedBox(height: 16.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton.icon(
-                  onPressed: onCall,
-                  icon: Icon(Icons.phone, color: Colors.blue),
-                  label: Text(
-                    'Call',
-                    style: AppTextStyle.medium14.copyWith(color: Colors.blue),
-                  ),
-                ),
-                SizedBox(width: 16.w),
-                TextButton.icon(
-                  onPressed: onEdit,
-                  icon: Icon(Icons.edit, color: Colors.blue),
-                  label: Text(
-                    'Edit',
-                    style: AppTextStyle.medium14.copyWith(color: Colors.blue),
-                  ),
-                ),
-              ],
-            ),*/
+            SizedBox(height: 12.h),
+            if (lead.phone.isNotEmpty)
+              Text(
+                'Phone: ${lead.phone}',
+                style: AppTextStyle.regular14,
+              ),
+            if (lead.email.isNotEmpty) ...[
+              SizedBox(height: 4.h),
+              Text(
+                'Email: ${lead.email}',
+                style: AppTextStyle.regular14,
+              ),
+            ],
+            if (lead.note != null) ...[
+              SizedBox(height: 4.h),
+              Text(
+                'Note: ${lead.note}',
+                style: AppTextStyle.regular14,
+              ),
+            ],
+            SizedBox(height: 8.h),
+            Text(
+              'Created: $formattedDate',
+              style: AppTextStyle.regular12.copyWith(color: Colors.grey),
+            ),
           ],
         ),
       ),
