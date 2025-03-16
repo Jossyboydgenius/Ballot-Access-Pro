@@ -7,6 +7,7 @@ import 'package:ballot_access_pro/shared/widgets/app_input.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/widgets/lead_card.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/bloc/leads_bloc.dart';
+import 'package:ballot_access_pro/shared/widgets/skeleton.dart';
 
 class LeadsView extends StatelessWidget {
   const LeadsView({super.key});
@@ -50,7 +51,21 @@ class _LeadsViewContentState extends State<LeadsViewContent> {
         },
         builder: (context, state) {
           if (state.status == LeadsStatus.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(16.w),
+                  child: AppInput(
+                    controller: searchController,
+                    hintText: 'Search leads...',
+                    keyboardType: TextInputType.text,
+                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                    readOnly: true,
+                  ),
+                ),
+                Expanded(child: _buildLeadsSkeleton()),
+              ],
+            );
           }
 
           final leads = state.leads?.docs ?? [];
@@ -107,6 +122,51 @@ class _LeadsViewContentState extends State<LeadsViewContent> {
             lead.phone.contains(searchQuery);
       }).toList();
     });
+  }
+
+  Widget _buildLeadsSkeleton() {
+    return ListView.builder(
+      itemCount: 5, // Show 5 skeleton items
+      itemBuilder: (context, index) {
+        return Container(
+          margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12.r),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(16.w),
+            child: Row(
+              children: [
+                Skeleton(
+                  height: 40.r,
+                  width: 40.r,
+                  borderRadius: 20.r,
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Skeleton(width: 120.w),
+                      SizedBox(height: 8.h),
+                      Skeleton(width: 200.w),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
