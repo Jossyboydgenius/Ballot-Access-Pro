@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../services/local_storage_service.dart';
 import '../services/petitioner_service.dart';
 import '../ui/views/petitioner/bloc/profile_bloc.dart';
+import '../ui/views/petitioner/bloc/personal_information_bloc.dart';
 
 final locator = GetIt.instance;
 
@@ -15,6 +16,7 @@ Future<void> setUpLocator(AppFlavorConfig config) async {
   _registerRepositories();
   _setUpServices();
   locator.registerFactory(() => ProfileBloc());
+  locator.registerFactory(() => PersonalInformationBloc());
 }
 
 void registerController() {}
