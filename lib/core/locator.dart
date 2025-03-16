@@ -4,6 +4,8 @@ import 'package:get_it/get_it.dart';
 import '../services/api/api.dart';
 import '../services/auth_service.dart';
 import '../services/local_storage_service.dart';
+import '../services/petitioner_service.dart';
+import '../ui/views/petitioner/bloc/profile_bloc.dart';
 
 final locator = GetIt.instance;
 
@@ -12,6 +14,7 @@ Future<void> setUpLocator(AppFlavorConfig config) async {
   _registerServices();
   _registerRepositories();
   _setUpServices();
+  locator.registerFactory(() => ProfileBloc());
 }
 
 void registerController() {}
@@ -20,6 +23,7 @@ void _registerServices() {
   locator.registerLazySingleton<Api>(() => Api());
   locator.registerLazySingleton<LocalStorageService>(() => LocalStorageService());
   locator.registerLazySingleton<AuthService>(() => AuthService());
+  locator.registerLazySingleton(() => PetitionerService());
 }
 
 Future<void> _registerExternalDependencies(AppFlavorConfig config) async {
