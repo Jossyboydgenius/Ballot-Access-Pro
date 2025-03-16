@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
+import 'package:ballot_access_pro/core/config/env_config.dart';
 
 class MapView extends StatefulWidget {
   const MapView({super.key});
@@ -109,7 +110,9 @@ class _MapViewState extends State<MapView> {
                     target: _currentPosition!,
                     zoom: 15,
                   ),
-                  onMapCreated: (controller) => _mapController = controller,
+                  onMapCreated: (controller) {
+                    _mapController = controller;
+                  },
                   myLocationEnabled: true,
                   myLocationButtonEnabled: false,
                   markers: _markers,
