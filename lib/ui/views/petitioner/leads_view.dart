@@ -158,6 +158,7 @@ class _LeadsViewState extends State<LeadsView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text(
           'Leads',
           style: AppTextStyle.bold20,
