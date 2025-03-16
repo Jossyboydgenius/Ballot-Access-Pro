@@ -70,6 +70,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     try {
       await _storageService.clearToken();
       emit(state.copyWith(status: ProfileStatus.initial));
+      NavigationService.pushReplacementNamed(AppRoutes.signInView);
     } catch (e) {
       emit(state.copyWith(
         status: ProfileStatus.failure,
