@@ -23,6 +23,7 @@ class ProfileView extends StatelessWidget {
       create: (context) => GetIt.I<ProfileBloc>()..add(const LoadProfile()),
       child: Scaffold(
         appBar: AppBar(
+          automaticallyImplyLeading: false,
           title: Text(
             'Profile',
             style: AppTextStyle.bold20,
