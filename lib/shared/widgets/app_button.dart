@@ -82,7 +82,9 @@ class AppButton extends StatelessWidget {
             ? const SizedBox(
                 height: 20,
                 width: 20,
-                child: CircularProgressIndicator(),
+                child: CircularProgressIndicator(
+                  color: AppColors.primary,
+                ),
               )
             : suffix != null
                 ? Row(
