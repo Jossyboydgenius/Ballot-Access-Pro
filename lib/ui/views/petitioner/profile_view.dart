@@ -10,9 +10,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'bloc/profile_bloc.dart';
 import 'bloc/profile_state.dart';
 import 'bloc/profile_event.dart';
-import 'package:ballot_access_pro/shared/widgets/app_loading.dart';
 import 'package:ballot_access_pro/shared/widgets/app_toast.dart';
 import 'package:get_it/get_it.dart';
+import 'package:ballot_access_pro/shared/widgets/skeleton.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
@@ -39,7 +39,18 @@ class ProfileView extends StatelessWidget {
           },
           builder: (context, state) {
             if (state.status == ProfileStatus.loading) {
-              return const AppLoading();
+              return SingleChildScrollView(
+                padding: EdgeInsets.all(16.w),
+                child: Column(
+                  children: [
+                    _buildProfileHeaderSkeleton(),
+                    SizedBox(height: 24.h),
+                    _buildStatisticsSkeleton(),
+                    SizedBox(height: 24.h),
+                    _buildMenuSkeleton(),
+                  ],
+                ),
+              );
             }
 
             if (state.petitioner == null) {
@@ -342,6 +353,141 @@ class ProfileView extends StatelessWidget {
       height: 1,
       thickness: 1,
       color: Colors.grey[200],
+    );
+  }
+
+  Widget _buildProfileHeaderSkeleton() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Skeleton(
+            height: 100.r,
+            width: 100.r,
+            borderRadius: 50.r,
+          ),
+          SizedBox(height: 16.h),
+          Skeleton(width: 150.w),
+          SizedBox(height: 8.h),
+          Skeleton(width: 100.w),
+          SizedBox(height: 16.h),
+          Skeleton(width: 80.w, height: 30.h),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatisticsSkeleton() {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Skeleton(width: 120.w),
+          SizedBox(height: 16.h),
+          Row(
+            children: [
+              Expanded(child: _buildStatItemSkeleton()),
+              SizedBox(width: 16.w),
+              Expanded(child: _buildStatItemSkeleton()),
+            ],
+          ),
+          SizedBox(height: 16.h),
+          Row(
+            children: [
+              Expanded(child: _buildStatItemSkeleton()),
+              SizedBox(width: 16.w),
+              Expanded(child: _buildStatItemSkeleton()),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItemSkeleton() {
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Skeleton(height: 20.r, width: 20.r),
+          SizedBox(height: 8.h),
+          Skeleton(),
+          SizedBox(height: 4.h),
+          Skeleton(width: 60.w),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuSkeleton() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildMenuItemSkeleton(),
+          _buildDivider(),
+          _buildMenuItemSkeleton(),
+          _buildDivider(),
+          _buildMenuItemSkeleton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItemSkeleton() {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: 16.w,
+        vertical: 12.h,
+      ),
+      child: Row(
+        children: [
+          Skeleton(height: 24.r, width: 24.r),
+          SizedBox(width: 16.w),
+          Expanded(child: Skeleton()),
+          SizedBox(width: 16.w),
+          Skeleton(height: 24.r, width: 24.r),
+        ],
+      ),
     );
   }
 }
