@@ -1,5 +1,6 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../core/locator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LocalStorageKeys {
   static String refreshToken = 'refreshToken';
@@ -14,27 +15,35 @@ class LocalStorageKeys {
 }
 
 class LocalStorageService {
-  final fSStorage = locator<FlutterSecureStorage>();
+  final FlutterSecureStorage _storage = locator<FlutterSecureStorage>();
 
   Future<String?> getStorageValue(String key) async {
-    String? value = await fSStorage.read(key: key);
-    return value;
+    return await _storage.read(key: key);
   }
 
   Future<void> saveStorageValue(String key, String value) async {
-    return await fSStorage.write(key: key, value: value);
+    await _storage.write(key: key, value: value);
   }
 
   Future<void> clearAuthAll() async {
-    await fSStorage.delete(key: LocalStorageKeys.accessToken);
-    await fSStorage.delete(key: LocalStorageKeys.refreshToken);
-    await fSStorage.delete(key: LocalStorageKeys.expiresIn);
-    await fSStorage.delete(key: LocalStorageKeys.debugName);
-    await fSStorage.delete(key: LocalStorageKeys.debugEmail);
-    await fSStorage.delete(key: LocalStorageKeys.debugPassword);
-    await fSStorage.delete(key: LocalStorageKeys.expiresIn);
-    await fSStorage.delete(key: LocalStorageKeys.timedOut);
+    await _storage.delete(key: LocalStorageKeys.accessToken);
+    await _storage.delete(key: LocalStorageKeys.refreshToken);
+    await _storage.delete(key: LocalStorageKeys.expiresIn);
+    await _storage.delete(key: LocalStorageKeys.debugName);
+    await _storage.delete(key: LocalStorageKeys.debugEmail);
+    await _storage.delete(key: LocalStorageKeys.debugPassword);
+    await _storage.delete(key: LocalStorageKeys.expiresIn);
+    await _storage.delete(key: LocalStorageKeys.timedOut);
   }
 
-  Future<void> clearAll() async => await fSStorage.deleteAll();
+  Future<void> clearAll() async => await _storage.deleteAll();
+
+  Future<void> clearToken() async {
+    await _storage.delete(key: LocalStorageKeys.accessToken);
+  }
+
+  Future<void> removeStorageValue(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(key);
+  }
 }
