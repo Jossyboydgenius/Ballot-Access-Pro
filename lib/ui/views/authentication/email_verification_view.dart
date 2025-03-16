@@ -71,7 +71,7 @@ class _EmailVerificationViewState extends State<EmailVerificationView> {
   }
 
   void _handleVerification() {
-    if (pinController.text.length != 6) return;
+    if (pinController.text.length != 5) return;
 
     context.read<EmailVerificationBloc>().add(
           VerifyEmailSubmitted(
@@ -154,7 +154,7 @@ class _EmailVerificationViewState extends State<EmailVerificationView> {
                 AppSpacing.v32(),
                 Center(
                   child: Pinput(
-                    length: 6,
+                    length: 5,
                     controller: pinController,
                     defaultPinTheme: defaultPinTheme,
                     focusedPinTheme: defaultPinTheme.copyWith(
