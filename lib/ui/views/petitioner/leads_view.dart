@@ -14,10 +14,7 @@ class LeadsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => LeadsBloc()..add(const LoadLeads()),
-      child: const LeadsViewContent(),
-    );
+    return const LeadsViewContent();
   }
 }
 
@@ -50,7 +47,7 @@ class _LeadsViewContentState extends State<LeadsViewContent> {
           }
         },
         builder: (context, state) {
-          if (state.status == LeadsStatus.loading) {
+          if (state.status == LeadsStatus.loading && state.leads == null) {
             return Column(
               children: [
                 Padding(
@@ -70,41 +67,57 @@ class _LeadsViewContentState extends State<LeadsViewContent> {
 
           final leads = state.leads?.docs ?? [];
           
-          return Column(
-            children: [
-              Padding(
-                padding: EdgeInsets.all(16.w),
-                child: AppInput(
-                  controller: searchController,
-                  hintText: 'Search leads...',
-                  keyboardType: TextInputType.text,
-                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                  onChanged: (value) => _filterLeads(value, leads),
+          return RefreshIndicator(
+            onRefresh: () async {
+              context.read<LeadsBloc>().add(const LoadLeads());
+            },
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(16.w),
+                  child: AppInput(
+                    controller: searchController,
+                    hintText: 'Search leads...',
+                    keyboardType: TextInputType.text,
+                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                    onChanged: (value) => _filterLeads(value, leads),
+                  ),
                 ),
-              ),
-              Expanded(
-                child: filteredLeads.isEmpty && searchController.text.isEmpty
-                    ? ListView.builder(
-                        itemCount: leads.length,
-                        itemBuilder: (context, index) {
-                          return LeadCard(lead: leads[index]);
-                        },
-                      )
-                    : filteredLeads.isEmpty
-                        ? Center(
-                            child: Text(
-                              'No leads found',
-                              style: AppTextStyle.regular16.copyWith(color: Colors.grey),
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: filteredLeads.length,
-                            itemBuilder: (context, index) {
-                              return LeadCard(lead: filteredLeads[index]);
-                            },
-                          ),
-              ),
-            ],
+                Expanded(
+                  child: Stack(
+                    children: [
+                      filteredLeads.isEmpty && searchController.text.isEmpty
+                          ? ListView.builder(
+                              itemCount: leads.length,
+                              itemBuilder: (context, index) {
+                                return LeadCard(lead: leads[index]);
+                              },
+                            )
+                          : filteredLeads.isEmpty
+                              ? Center(
+                                  child: Text(
+                                    'No leads found',
+                                    style: AppTextStyle.regular16.copyWith(color: Colors.grey),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  itemCount: filteredLeads.length,
+                                  itemBuilder: (context, index) {
+                                    return LeadCard(lead: filteredLeads[index]);
+                                  },
+                                ),
+                      if (state.status == LeadsStatus.loading)
+                        const Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: LinearProgressIndicator(),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),
