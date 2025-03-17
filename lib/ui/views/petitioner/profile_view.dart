@@ -19,61 +19,75 @@ class ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => GetIt.I<ProfileBloc>()..add(const LoadProfile()),
-      child: Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          title: Text(
-            'Profile',
-            style: AppTextStyle.bold20,
-          ),
-          centerTitle: true,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Text(
+          'Profile',
+          style: AppTextStyle.bold20,
         ),
-        body: BlocConsumer<ProfileBloc, ProfileState>(
-          listener: (context, state) {
-            if (state.status == ProfileStatus.failure) {
-              AppToast.showErrorToast(state.error ?? 'Failed to load profile');
-            }
-          },
-          builder: (context, state) {
-            if (state.status == ProfileStatus.loading) {
-              return SingleChildScrollView(
-                padding: EdgeInsets.all(16.w),
-                child: Column(
-                  children: [
-                    _buildProfileHeaderSkeleton(),
-                    SizedBox(height: 24.h),
-                    _buildStatisticsSkeleton(),
-                    SizedBox(height: 24.h),
-                    _buildMenuSkeleton(),
-                  ],
-                ),
-              );
-            }
-
-            if (state.petitioner == null) {
-              return const Center(
-                child: Text('No profile data available'),
-              );
-            }
-
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: BlocConsumer<ProfileBloc, ProfileState>(
+        listener: (context, state) {
+          if (state.status == ProfileStatus.failure) {
+            AppToast.showErrorToast(state.error ?? 'Failed to load profile');
+          }
+        },
+        builder: (context, state) {
+          if (state.status == ProfileStatus.loading && state.petitioner == null) {
             return SingleChildScrollView(
               padding: EdgeInsets.all(16.w),
               child: Column(
                 children: [
-                  _buildProfileHeader(state),
+                  _buildProfileHeaderSkeleton(),
                   SizedBox(height: 24.h),
-                  _buildStatisticsSection(state),
+                  _buildStatisticsSkeleton(),
                   SizedBox(height: 24.h),
-                  _buildMenuSection(context),
+                  _buildMenuSkeleton(),
                 ],
               ),
             );
-          },
-        ),
+          }
+
+          if (state.petitioner == null) {
+            return const Center(
+              child: Text('No profile data available'),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              context.read<ProfileBloc>().add(const LoadProfile());
+            },
+            child: Stack(
+              children: [
+                SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.all(16.w),
+                  child: Column(
+                    children: [
+                      _buildProfileHeader(state),
+                      SizedBox(height: 24.h),
+                      _buildStatisticsSection(state),
+                      SizedBox(height: 24.h),
+                      _buildMenuSection(context),
+                    ],
+                  ),
+                ),
+                if (state.status == ProfileStatus.loading)
+                  const Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: LinearProgressIndicator(),
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
