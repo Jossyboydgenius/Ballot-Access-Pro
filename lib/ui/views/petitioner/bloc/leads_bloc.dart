@@ -58,7 +58,13 @@ class LeadsBloc extends Bloc<LeadsEvent, LeadsState> {
     LoadLeads event,
     Emitter<LeadsState> emit,
   ) async {
-    emit(state.copyWith(status: LeadsStatus.loading));
+    // Only show loading state if we don't have any data
+    if (state.leads == null) {
+      emit(state.copyWith(status: LeadsStatus.loading));
+    } else {
+      // If we have data, show loading state while keeping existing data
+      emit(state.copyWith(status: LeadsStatus.loading));
+    }
 
     try {
       final response = await _petitionerService.getLeads();
