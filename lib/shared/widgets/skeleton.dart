@@ -1,3 +1,4 @@
+import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -16,7 +17,7 @@ class Skeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
+      baseColor: AppColors.grey200,
       highlightColor: Colors.grey[100]!,
       child: Container(
         height: height,
