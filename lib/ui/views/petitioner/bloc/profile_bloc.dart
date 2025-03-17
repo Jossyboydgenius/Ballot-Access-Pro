@@ -21,7 +21,13 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     LoadProfile event,
     Emitter<ProfileState> emit,
   ) async {
-    emit(state.copyWith(status: ProfileStatus.loading));
+    // Only show loading state if we don't have any data
+    if (state.petitioner == null) {
+      emit(state.copyWith(status: ProfileStatus.loading));
+    } else {
+      // If we have data, show loading state while keeping existing data
+      emit(state.copyWith(status: ProfileStatus.loading));
+    }
 
     try {
       final token = await _storageService.getStorageValue(LocalStorageKeys.accessToken);
