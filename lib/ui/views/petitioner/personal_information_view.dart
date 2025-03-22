@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/bloc/personal_information_bloc.dart';
-import 'package:ballot_access_pro/models/petitioner_model.dart';
 import 'package:ballot_access_pro/shared/widgets/personal_information_skeleton.dart';
 
 class PersonalInformationView extends StatelessWidget {
