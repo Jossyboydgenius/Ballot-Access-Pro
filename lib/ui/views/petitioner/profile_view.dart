@@ -11,7 +11,6 @@ import 'bloc/profile_bloc.dart';
 import 'bloc/profile_state.dart';
 import 'bloc/profile_event.dart';
 import 'package:ballot_access_pro/shared/widgets/app_toast.dart';
-import 'package:get_it/get_it.dart';
 import 'package:ballot_access_pro/shared/widgets/skeleton.dart';
 
 class ProfileView extends StatelessWidget {
