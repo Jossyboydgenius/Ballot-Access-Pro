@@ -53,9 +53,7 @@
 	<string>This app needs access to location when open and in the background to update your location on the map.</string>
 	<key>io.flutter.embedded_views_preview</key>
 	<true/>
-	<key>GMSApiKey</key>
-	<string>AIzaSyDZnDYsF5m4HincgxwgN4TB2A8FIO2DHM4</string>
 	<key>GoogleMapsApiKey</key>
-	<string>$(GOOGLE_MAPS_API_KEY)</string>
+	<string>AIzaSyB_QYzkb3OOa0t4_K6m7c8pge86e_111mM</string>
 </dict>
 </plist>
