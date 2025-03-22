@@ -55,10 +55,14 @@ dependencies:
   # UI
   flutter_svg: ^2.0.9
   flutter_screenutil: ^5.9.0
-  google_maps_flutter: ^2.5.0
+  google_maps_flutter: ^2.5.3
+  google_maps_flutter_android: ^2.6.2
+  google_maps_flutter_platform_interface: ^2.4.3
+  map_launcher: ^3.1.0
   location: ^5.0.3
   permission_handler: ^11.2.0
   geolocator: ^10.1.0
+  geocoding: ^2.1.1
   url_launcher: ^6.2.5
   country_picker: ^2.0.27
   pinput: ^5.0.1
@@ -105,6 +109,7 @@ flutter:
   assets:
     - assets/svgs/
     - assets/images/
+    - assets/map_style.json
     - .env
 
   # An image asset can refer to one or more resolution-specific "variants", see
