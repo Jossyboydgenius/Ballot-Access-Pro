@@ -2,11 +2,10 @@ import 'package:ballot_access_pro/shared/widgets/add_house_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:location/location.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:geolocator/geolocator.dart' as geo;
+import 'package:geolocator/geolocator.dart';
 import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
+import 'package:ballot_access_pro/services/map_service.dart';
 
 class MapView extends StatefulWidget {
   const MapView({super.key});
@@ -16,85 +15,72 @@ class MapView extends StatefulWidget {
 }
 
 class _MapViewState extends State<MapView> {
-  String selectedStatus = '';
   GoogleMapController? _mapController;
-  Location _location = Location();
-  LatLng? _currentPosition;
-  String _currentAddress = 'Fetching location...';
+  Position? _currentPosition;
   Set<Marker> _markers = {};
+  String selectedStatus = '';
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _requestLocationPermission();
+    _initializeLocation();
   }
 
-  Future<void> _requestLocationPermission() async {
-    final status = await Permission.location.request();
-    if (status.isGranted) {
-      _getCurrentLocation();
-      _setupLocationListener();
-    }
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
   }
 
-  Future<void> _getCurrentLocation() async {
+  Future<void> _initializeLocation() async {
     try {
-      final position = await geo.Geolocator.getCurrentPosition(
-        desiredAccuracy: geo.LocationAccuracy.high,
-      );
+      final position = await MapService.getCurrentLocation();
       setState(() {
-        _currentPosition = LatLng(position.latitude, position.longitude);
+        _currentPosition = position;
+        _isLoading = false;
       });
-      _updateAddress();
-      _animateToCurrentLocation();
+      _updateMarkers();
     } catch (e) {
-      debugPrint('Error getting location: $e');
+      setState(() => _isLoading = false);
+      _showError(e.toString());
     }
   }
 
-  void _setupLocationListener() {
-    _location.onLocationChanged.listen((LocationData locationData) {
-      if (mounted && locationData.latitude != null && locationData.longitude != null) {
-        setState(() {
-          _currentPosition = LatLng(locationData.latitude!, locationData.longitude!);
-          _updateMarker();
-        });
-      }
-    });
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
-  Future<void> _updateAddress() async {
-    if (_currentPosition == null) return;
-    // TODO: Implement reverse geocoding to get address from coordinates
-    setState(() {
-      _currentAddress = '${_currentPosition!.latitude}, ${_currentPosition!.longitude}';
-    });
-  }
-
-  void _updateMarker() {
+  void _updateMarkers() {
     if (_currentPosition == null) return;
     setState(() {
       _markers = {
         Marker(
           markerId: const MarkerId('currentLocation'),
-          position: _currentPosition!,
+          position: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
           infoWindow: const InfoWindow(title: 'Current Location'),
         ),
       };
     });
   }
 
-  void _animateToCurrentLocation() {
-    if (_mapController != null && _currentPosition != null) {
-      _mapController!.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: _currentPosition!,
-            zoom: 15,
-          ),
-        ),
-      );
+  Future<void> _onMapCreated(GoogleMapController controller) async {
+    _mapController = controller;
+    await controller.setMapStyle(MapService.mapStyle.toString());
+    if (_currentPosition != null) {
+      _animateToCurrentLocation();
     }
+  }
+
+  void _animateToCurrentLocation() {
+    if (_mapController == null || _currentPosition == null) return;
+    _mapController!.animateCamera(
+      CameraUpdate.newCameraPosition(
+        MapService.getCameraPosition(_currentPosition!),
+      ),
+    );
   }
 
   @override
@@ -102,22 +88,25 @@ class _MapViewState extends State<MapView> {
     return Scaffold(
       body: Stack(
         children: [
-          _currentPosition == null
-              ? const Center(child: CircularProgressIndicator(
-                color: AppColors.primary,
-              ))
-              : GoogleMap(
-                  initialCameraPosition: CameraPosition(
-                    target: _currentPosition!,
-                    zoom: 15,
-                  ),
-                  onMapCreated: (controller) {
-                    _mapController = controller;
-                  },
-                  myLocationEnabled: true,
-                  myLocationButtonEnabled: false,
-                  markers: _markers,
-                ),
+          if (_isLoading)
+            const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
+          else
+            GoogleMap(
+              initialCameraPosition: _currentPosition != null
+                  ? MapService.getCameraPosition(_currentPosition!)
+                  : const CameraPosition(
+                      target: LatLng(0, 0),
+                      zoom: 2,
+                    ),
+              myLocationEnabled: true,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+              mapToolbarEnabled: false,
+              markers: _markers,
+              onMapCreated: _onMapCreated,
+            ),
           // Status Filter Bar
           Positioned(
             top: 50.h,
@@ -154,7 +143,7 @@ class _MapViewState extends State<MapView> {
               ),
             ),
           ),
-          // Buttons
+          // Map Controls
           Positioned(
             bottom: 16.h,
             right: 16.w,
@@ -210,21 +199,27 @@ class _MapViewState extends State<MapView> {
   }
 
   void _showAddHouseBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => AddHouseBottomSheet(
-        currentAddress: _currentAddress,
-        selectedStatus: selectedStatus,
-        onStatusSelected: (status) {
-          setState(() => selectedStatus = status);
-        },
-        onAddHouse: () {
-          // TODO: Implement add house logic
-          Navigator.pop(context);
-        },
-      ),
-    );
+    if (_currentPosition == null) return;
+    
+    MapService.getAddressFromCoordinates(
+      _currentPosition!.latitude,
+      _currentPosition!.longitude,
+    ).then((address) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => AddHouseBottomSheet(
+          currentAddress: address,
+          selectedStatus: selectedStatus,
+          onStatusSelected: (status) {
+            setState(() => selectedStatus = status);
+          },
+          onAddHouse: () {
+            Navigator.pop(context);
+          },
+        ),
+      );
+    });
   }
 }
