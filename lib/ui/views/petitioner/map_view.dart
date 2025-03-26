@@ -20,6 +20,7 @@ class _MapViewState extends State<MapView> {
   Set<Marker> _markers = {};
   String selectedStatus = '';
   bool _isLoading = true;
+  bool _mapCreated = false;
 
   @override
   void initState() {
@@ -29,7 +30,10 @@ class _MapViewState extends State<MapView> {
 
   @override
   void dispose() {
-    _mapController?.dispose();
+    if (_mapController != null) {
+      _mapController!.dispose();
+      _mapController = null;
+    }
     super.dispose();
   }
 
@@ -67,8 +71,22 @@ class _MapViewState extends State<MapView> {
   }
 
   Future<void> _onMapCreated(GoogleMapController controller) async {
+    if (_mapCreated) return;
     _mapController = controller;
-    await controller.setMapStyle(MapService.mapStyle.toString());
+    _mapCreated = true;
+    
+    try {
+      // Convert the map style list to a JSON string
+      final String style = MapService.mapStyle is List 
+          ? '[${MapService.mapStyle.map((e) => e.toString()).join(',')}]'
+          : MapService.mapStyle.toString();
+      
+      await controller.setMapStyle(style);
+    } catch (e) {
+      debugPrint('Error setting map style: $e');
+      // Continue even if map style fails
+    }
+    
     if (_currentPosition != null) {
       _animateToCurrentLocation();
     }
@@ -106,6 +124,7 @@ class _MapViewState extends State<MapView> {
               mapToolbarEnabled: false,
               markers: _markers,
               onMapCreated: _onMapCreated,
+              key: const ValueKey('google_map'),
             ),
           // Status Filter Bar
           Positioned(
