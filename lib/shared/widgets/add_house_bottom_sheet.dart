@@ -56,7 +56,7 @@ class AddHouseBottomSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Add New House',
+              'Add New Pin',
               style: AppTextStyle.bold20,
             ),
             AppSpacing.v16(),
