@@ -1,4 +1,5 @@
 import 'package:ballot_access_pro/models/lead_model.dart';
+import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/shared/widgets/app_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -68,6 +69,7 @@ class _LeadsViewContentState extends State<LeadsViewContent> {
           final leads = state.leads?.docs ?? [];
           
           return RefreshIndicator(
+            color: AppColors.primary,
             onRefresh: () async {
               context.read<LeadsBloc>().add(const LoadLeads());
             },
@@ -111,7 +113,10 @@ class _LeadsViewContentState extends State<LeadsViewContent> {
                           top: 0,
                           left: 0,
                           right: 0,
-                          child: LinearProgressIndicator(),
+                          child: LinearProgressIndicator(
+                            color: AppColors.primary,
+                            backgroundColor: Colors.transparent,
+                          ),
                         ),
                     ],
                   ),
