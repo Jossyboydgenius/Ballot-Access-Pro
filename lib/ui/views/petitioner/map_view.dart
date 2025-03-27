@@ -21,11 +21,14 @@ class _MapViewState extends State<MapView> {
   String selectedStatus = '';
   bool _isLoading = true;
   bool _mapCreated = false;
+  Set<Marker> _petitionerMarkers = {};
+  Set<Marker> _voterMarkers = {};
 
   @override
   void initState() {
     super.initState();
     _initializeLocation();
+    _fetchPetitionersAndVoters();
   }
 
   @override
@@ -101,6 +104,11 @@ class _MapViewState extends State<MapView> {
     );
   }
 
+  Future<void> _fetchPetitionersAndVoters() async {
+    // TODO: Implement API call to fetch petitioners and voters locations
+    // This should update _petitionerMarkers and _voterMarkers
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -118,15 +126,16 @@ class _MapViewState extends State<MapView> {
                       target: LatLng(0, 0),
                       zoom: 2,
                     ),
+              mapType: MapType.satellite,
               myLocationEnabled: true,
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
               mapToolbarEnabled: false,
-              markers: _markers,
+              markers: {..._markers, ..._petitionerMarkers, ..._voterMarkers},
               onMapCreated: _onMapCreated,
               key: const ValueKey('google_map'),
+              onLongPress: _handleMapLongPress,
             ),
-          // Status Filter Bar
           Positioned(
             top: 50.h,
             left: 16.w,
@@ -148,13 +157,13 @@ class _MapViewState extends State<MapView> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildStatusChip('All', Colors.grey),
+                    _buildStatusChip('Signed', AppColors.green100),
                     SizedBox(width: 8.w),
-                    _buildStatusChip('Signed', Colors.green),
+                    _buildStatusChip('Partially Signed', AppColors.green.withOpacity(0.6)),
                     SizedBox(width: 8.w),
-                    _buildStatusChip('Come Back', Colors.orange),
+                    _buildStatusChip('Come Back', Colors.blue),
                     SizedBox(width: 8.w),
-                    _buildStatusChip('Not Home', Colors.blue),
+                    _buildStatusChip('Not Home', Colors.yellow),
                     SizedBox(width: 8.w),
                     _buildStatusChip('BAS', Colors.red),
                   ],
@@ -162,32 +171,15 @@ class _MapViewState extends State<MapView> {
               ),
             ),
           ),
-          // Map Controls
           Positioned(
             bottom: 16.h,
             right: 16.w,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FloatingActionButton(
-                  heroTag: 'locate',
-                  mini: true,
-                  backgroundColor: Colors.white,
-                  onPressed: _animateToCurrentLocation,
-                  child: const Icon(Icons.my_location, color: AppColors.primary),
-                ),
-                SizedBox(height: 8.h),
-                FloatingActionButton.extended(
-                  heroTag: 'add',
-                  backgroundColor: AppColors.primary,
-                  onPressed: () => _showAddHouseBottomSheet(context),
-                  icon: const Icon(Icons.add_location_alt, color: Colors.white),
-                  label: Text(
-                    'Add Pin',
-                    style: AppTextStyle.semibold16.copyWith(color: Colors.white),
-                  ),
-                ),
-              ],
+            child: FloatingActionButton(
+              heroTag: 'locate',
+              mini: true,
+              backgroundColor: Colors.white,
+              onPressed: _animateToCurrentLocation,
+              child: const Icon(Icons.my_location, color: AppColors.primary),
             ),
           ),
         ],
@@ -198,11 +190,25 @@ class _MapViewState extends State<MapView> {
   Widget _buildStatusChip(String label, Color color) {
     final isSelected = selectedStatus == label;
     return FilterChip(
-      label: Text(
-        label,
-        style: AppTextStyle.regular12.copyWith(
-          color: isSelected ? Colors.white : Colors.black,
-        ),
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 12.r,
+            height: 12.r,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          SizedBox(width: 8.w),
+          Text(
+            label,
+            style: AppTextStyle.regular12.copyWith(
+              color: isSelected ? Colors.white : Colors.black,
+            ),
+          ),
+        ],
       ),
       selected: isSelected,
       onSelected: (bool selected) {
@@ -212,33 +218,41 @@ class _MapViewState extends State<MapView> {
       },
       backgroundColor: Colors.white,
       selectedColor: color,
-      checkmarkColor: Colors.white,
+      showCheckmark: false,
       side: BorderSide(color: color),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
     );
   }
 
-  void _showAddHouseBottomSheet(BuildContext context) {
-    if (_currentPosition == null) return;
-    
-    MapService.getAddressFromCoordinates(
-      _currentPosition!.latitude,
-      _currentPosition!.longitude,
-    ).then((address) {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (context) => AddHouseBottomSheet(
-          currentAddress: address,
-          selectedStatus: selectedStatus,
-          onStatusSelected: (status) {
-            setState(() => selectedStatus = status);
-          },
-          onAddHouse: () {
-            Navigator.pop(context);
-          },
-        ),
-      );
-    });
+  void _handleMapLongPress(LatLng position) async {
+    final address = await MapService.getAddressFromCoordinates(
+      position.latitude,
+      position.longitude,
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AddHouseBottomSheet(
+        currentAddress: address,
+        selectedStatus: selectedStatus,
+        onStatusSelected: (status) {
+          setState(() => selectedStatus = status);
+        },
+        onAddHouse: () {
+          setState(() {
+            _markers.add(
+              Marker(
+                markerId: MarkerId(DateTime.now().toString()),
+                position: position,
+                infoWindow: InfoWindow(title: address),
+              ),
+            );
+          });
+          Navigator.pop(context);
+        },
+      ),
+    );
   }
 }
