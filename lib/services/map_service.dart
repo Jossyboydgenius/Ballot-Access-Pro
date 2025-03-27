@@ -44,6 +44,30 @@ class MapService {
     );
   }
 
+  static Marker createPetitionerMarker(String id, LatLng position, String name) {
+    return Marker(
+      markerId: MarkerId('petitioner_$id'),
+      position: position,
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+      infoWindow: InfoWindow(
+        title: name,
+        snippet: 'Petitioner',
+      ),
+    );
+  }
+
+  static Marker createVoterMarker(String id, LatLng position, String status) {
+    return Marker(
+      markerId: MarkerId('voter_$id'),
+      position: position,
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+      infoWindow: InfoWindow(
+        title: 'Voter',
+        snippet: status,
+      ),
+    );
+  }
+
   static final mapStyle = [
     {
       "featureType": "poi",
@@ -60,6 +84,15 @@ class MapService {
       "stylers": [
         {
           "visibility": "off"
+        }
+      ]
+    },
+    {
+      "featureType": "road",
+      "elementType": "labels",
+      "stylers": [
+        {
+          "visibility": "on"
         }
       ]
     }
