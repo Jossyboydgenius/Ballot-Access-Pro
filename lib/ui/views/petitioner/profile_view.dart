@@ -58,6 +58,7 @@ class ProfileView extends StatelessWidget {
           }
 
           return RefreshIndicator(
+            color: AppColors.primary,
             onRefresh: () async {
               context.read<ProfileBloc>().add(const LoadProfile());
             },
@@ -81,7 +82,10 @@ class ProfileView extends StatelessWidget {
                     top: 0,
                     left: 0,
                     right: 0,
-                    child: LinearProgressIndicator(),
+                    child: LinearProgressIndicator(
+                      color: AppColors.primary,
+                      backgroundColor: Colors.transparent,
+                    ),
                   ),
               ],
             ),
