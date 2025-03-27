@@ -23,7 +23,7 @@ class AppColors {
   static const Color orange200 = Color(0xFFF7D9A4);
   static const Color orange300 = Color(0xFFF87054);
   static const Color green = Color(0xFF40F13C);
-  static const Color green100 = Color(0xFF339933);
+  static const Color green100 = Color(0xFF2E7D32);
   static const Color green200 = Color(0xFF48C79F);
 
   // Error/Failure Colors
