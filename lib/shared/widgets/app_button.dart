@@ -18,8 +18,10 @@ class AppButton extends StatelessWidget {
   final bool loading;
   final TextAlign? textAlign;
   final EdgeInsets? margin;
+  final double? width;
+
   const AppButton({
-    super.key,
+    Key? key,
     this.onPressed,
     this.margin,
     this.text,
@@ -34,7 +36,8 @@ class AppButton extends StatelessWidget {
     this.enabled = true,
     this.loading = false,
     this.textAlign,
-  });
+    this.width,
+  }) : super(key: key);
 
   factory AppButton.icon({
     required VoidCallback? onPressed,
@@ -60,15 +63,16 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
+    return SizedBox(
+      width: width ?? double.infinity,
       height: height.h,
-      margin: margin ?? EdgeInsets.zero,
       child: ElevatedButton(
         onPressed: loading || !enabled ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          elevation: elevation,
           backgroundColor: backgroundColor ?? AppColors.primary,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: Colors.grey[300],
+          disabledForegroundColor: Colors.grey[500],
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(radius),
             side: borderColor == null
@@ -77,6 +81,7 @@ class AppButton extends StatelessWidget {
                     color: borderColor!,
                   ),
           ),
+          elevation: elevation,
         ),
         child: loading
             ? const SizedBox(
