@@ -61,29 +61,28 @@ class _MapViewState extends State<MapView> {
     try {
       debugPrint('Initializing map...');
       
-      // Initialize socket first
+      // 1. Connect to socket first for location tracking
+      debugPrint('Step 1: Initializing socket connection');
       await _initializeSocket();
       if (!mounted) return;
-
-      // Initialize location
+      
+      // 2. Initialize location
+      debugPrint('Step 2: Initializing device location');
       await _initializeLocation();
       if (!mounted) return;
-
-      // Get current territory
-      _currentTerritory = await TerritoryService.getCurrentTerritory();
-      if (!mounted) return;
-
-      // Fetch territories
-      await _fetchTerritories();
-      if (!mounted) return;
-
-      // Fetch houses
-      await _fetchHouses();
       
-      // Fetch petitioners and voters last
-      if (mounted) {
-        await _fetchPetitionersAndVoters();
-      }
+      // 3. Fetch houses (visits)
+      debugPrint('Step 3: Fetching house visits');
+      await _fetchHouses();
+      if (!mounted) return;
+      
+      // 4. Fetch territories last (to show boundaries)
+      debugPrint('Step 4: Fetching territory boundaries');
+      await _fetchTerritories();
+      
+      setState(() {
+        _isLoading = false;
+      });
     } catch (e, stackTrace) {
       debugPrint('Error initializing map: $e');
       debugPrint('Stack trace: $stackTrace');
@@ -91,9 +90,6 @@ class _MapViewState extends State<MapView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to initialize map: ${e.toString()}')),
         );
-      }
-    } finally {
-      if (mounted) {
         setState(() {
           _isLoading = false;
         });
@@ -303,11 +299,54 @@ class _MapViewState extends State<MapView> {
 
   Future<void> _fetchTerritories() async {
     try {
+      debugPrint('Fetching territories from API');
       final territories = await TerritoryService.getTerritories();
+      
+      if (territories.isEmpty) {
+        debugPrint('No territories found');
+        return;
+      }
+      
+      debugPrint('Successfully fetched ${territories.length} territories');
+      
       if (mounted) {
         setState(() {
-          _territoryPolygons = TerritoryService.createTerritoryPolygons(territories);
-          _territoryPolylines = TerritoryService.createTerritoryPolylines(territories);
+          // Create polygons for areas with a closed shape (polygon type)
+          _territoryPolygons = territories
+              .where((territory) => 
+                territory.boundary?.type == 'polygon' && 
+                territory.boundary!.paths.isNotEmpty)
+              .map((territory) {
+                debugPrint('Creating polygon for territory: ${territory.name}');
+                return Polygon(
+                  polygonId: PolygonId(territory.id),
+                  points: territory.boundary!.paths
+                      .map((point) => LatLng(point.lat, point.lng))
+                      .toList(),
+                  strokeWidth: 2,
+                  strokeColor: Colors.red,
+                  fillColor: Colors.red.withOpacity(0.3),
+                );
+              }).toSet();
+              
+          // Create polylines for paths (polyline type)
+          _territoryPolylines = territories
+              .where((territory) => 
+                territory.boundary?.type == 'polyline' && 
+                territory.boundary!.paths.isNotEmpty)
+              .map((territory) {
+                debugPrint('Creating polyline for territory: ${territory.name}');
+                return Polyline(
+                  polylineId: PolylineId(territory.id),
+                  points: territory.boundary!.paths
+                      .map((point) => LatLng(point.lat, point.lng))
+                      .toList(),
+                  width: 3,
+                  color: Colors.red,
+                );
+              }).toSet();
+              
+          debugPrint('Created ${_territoryPolygons.length} polygons and ${_territoryPolylines.length} polylines');
         });
       }
     } catch (e) {
@@ -417,8 +456,8 @@ class _MapViewState extends State<MapView> {
               initialCameraPosition: _currentPosition != null
                   ? MapService.getCameraPosition(_currentPosition!)
                   : const CameraPosition(
-                      target: LatLng(0, 0),
-                      zoom: 2,
+                      target: LatLng(40.7128, -74.0060), // New York as default
+                      zoom: 12,
                     ),
               mapType: _currentMapType,
               myLocationEnabled: true,
@@ -429,13 +468,13 @@ class _MapViewState extends State<MapView> {
                 ..._markers,
                 ..._petitionerMarkers,
                 ..._voterMarkers,
-                ..._houseMarkers, // Make sure house markers are included
+                ..._houseMarkers,
               },
+              polygons: _territoryPolygons,
+              polylines: _territoryPolylines,
               onMapCreated: _onMapCreated,
               key: const ValueKey('google_map'),
               onLongPress: _handleMapLongPress,
-              polygons: _territoryPolygons,
-              polylines: _territoryPolylines,
             ),
           Positioned(
             top: 50.h,
@@ -526,6 +565,41 @@ class _MapViewState extends State<MapView> {
             ),
           ),
           Positioned(
+            top: 120.h,
+            left: 16.w,
+            child: Container(
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('House Status', style: AppTextStyle.semibold14),
+                  SizedBox(height: 8.h),
+                  _buildLegendItem('Signed', AppColors.green100),
+                  SizedBox(height: 2.h),
+                  _buildLegendItem('Partially Signed', AppColors.green.withOpacity(0.6)),
+                  SizedBox(height: 2.h),
+                  _buildLegendItem('Come Back', Colors.blue),
+                  SizedBox(height: 2.h),
+                  _buildLegendItem('Not Home', Colors.yellow),
+                  SizedBox(height: 2.h),
+                  _buildLegendItem('BAS', Colors.red),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
             bottom: 16.h,
             right: 16.w,
             child: FloatingActionButton(
@@ -575,6 +649,27 @@ class _MapViewState extends State<MapView> {
       showCheckmark: false,
       side: BorderSide(color: color),
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+    );
+  }
+
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12.r,
+          height: 12.r,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        SizedBox(width: 8.w),
+        Text(
+          label,
+          style: AppTextStyle.regular12,
+        ),
+      ],
     );
   }
 
