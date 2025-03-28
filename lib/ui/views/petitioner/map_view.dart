@@ -16,7 +16,6 @@ import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/services/map_service.dart';
 import 'package:ballot_access_pro/services/socket_service.dart';
 import 'package:ballot_access_pro/models/user_location.dart';
-import 'package:socket_io_client/socket_io_client.dart';
 import 'package:ballot_access_pro/services/local_storage_service.dart';
 import 'package:ballot_access_pro/services/territory_service.dart';
 import 'dart:convert';
@@ -55,6 +54,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   DateTime _lastEmitTime = DateTime.now();
   final int _minEmitIntervalMs = 5000;
   bool _animatingToCurrentLocation = false;
+  Position? _lastSentPosition;
 
   @override
   bool get wantKeepAlive => true;
@@ -63,12 +63,17 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   void initState() {
     super.initState();
     _initializeMap();
+    
+    // Start a timer to check connection status periodically
+    Timer.periodic(Duration(seconds: 30), (timer) {
+      _checkSocketConnection();
+    });
   }
 
   @override
   void dispose() {
     _positionStreamSubscription?.cancel();
-    _removeSocketListeners();
+    _socketService.close(); // Ensure Socket.IO connection is closed
     if (_mapController != null) {
       _mapController!.dispose();
       _mapController = null;
@@ -76,19 +81,13 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     super.dispose();
   }
 
-  void _removeSocketListeners() {
-    if (_socketService.isInitialized) {
-      _socketService.off('location_update');
-    }
-  }
-
   Future<void> _initializeMap() async {
     try {
       debugPrint('Initializing map...');
       
-      // 1. Connect to socket first for location tracking
-      debugPrint('Step 1: Initializing socket connection');
-      await _initializeSocket();
+      // 1. Initialize WebSocket connection
+      debugPrint('Step 1: Initializing Socket.IO connection');
+      await _initializeSocketConnection();
       if (!mounted) return;
       
       // 2. Initialize location
@@ -122,24 +121,13 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     }
   }
 
-  Future<void> _initializeSocket() async {
+  Future<void> _initializeSocketConnection() async {
     try {
-      debugPrint('Initializing socket connection...');
-      final token = await locator<LocalStorageService>().getStorageValue(LocalStorageKeys.accessToken);
+      debugPrint('Initializing Socket.IO connection...');
       final userId = await locator<LocalStorageService>().getStorageValue(LocalStorageKeys.userId);
       
-      if (token == null) {
-        debugPrint('No auth token found for socket connection');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Authentication required')),
-          );
-        }
-        return;
-      }
-      
       if (userId == null) {
-        debugPrint('No user ID found for socket connection');
+        debugPrint('No user ID found for Socket.IO connection');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('User ID not found')),
@@ -148,92 +136,72 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
         return;
       }
 
-      _socketService = SocketService.getInstance(token, userId);
-      _setupSocketListeners();
+      // Get the SocketService singleton
+      _socketService = SocketService.getInstance();
+      
+      // Connect to the Socket.IO server
+      await _socketService.connect(userId);
+      
+      // Listen for connection status changes
+      _socketService.connectionStatus.listen((isConnected) {
+        if (mounted) {
+          setState(() {
+            _socketConnected = isConnected;
+          });
+          
+          // Send location update when reconnected
+          if (isConnected && _currentPosition != null) {
+            _sendTrackEvent(_currentPosition!);
+          }
+        }
+      });
+      
+      // Listen for location updates from other users
+      _socketService.addListener('location_update', (data) {
+        if (mounted) {
+          try {
+            debugPrint('📍 Received location update: $data');
+            final userLocation = UserLocation.fromJson(data);
+            setState(() {
+              _userLocations[userLocation.id] = userLocation;
+              _updateUserMarkers();
+            });
+          } catch (e) {
+            debugPrint('🔴 Error parsing location update: $e');
+          }
+        }
+      });
     } catch (e, stackTrace) {
-      debugPrint('Error in _initializeSocket: $e');
+      debugPrint('Error in _initializeSocketConnection: $e');
       debugPrint('Stack trace: $stackTrace');
     }
   }
 
-  void _setupSocketListeners() {
-    if (!_socketService.isInitialized) {
-      debugPrint('Socket not properly initialized');
-      return;
-    }
-
-    setState(() => _socketConnected = _socketService.isConnected);
-
-    _socketService.on('connect', (_) {
-      if (mounted) {
-        setState(() => _socketConnected = true);
-        if (_currentPosition != null) {
-          _emitLocation();
-        }
-      }
-    });
-
-    _socketService.on('disconnect', (_) {
-      if (mounted) {
-        setState(() => _socketConnected = false);
-      }
-    });
-
-    _socketService.on('location_update', (data) {
-      if (data != null && mounted) {
-        try {
-          final userLocation = UserLocation.fromJson(data);
-        setState(() {
-            _userLocations[userLocation.id] = userLocation;
-            _updateUserMarkers();
-        });
-        } catch (e) {
-          debugPrint('Error parsing location update: $e');
-        }
-      }
-    });
-  }
-
-  void _emitLocation() {
-    if (_currentPosition != null && _socketConnected) {
-      _socketService.emit('update_location', {
-        'latitude': _currentPosition!.latitude.toString(),
-        'longitude': _currentPosition!.longitude.toString(),
-      });
-    }
-  }
-
-  void _updateUserMarkers() {
-    setState(() {
-      _petitionerMarkers = _userLocations.values.map((user) {
-        return Marker(
-          markerId: MarkerId('user_${user.id}'),
-          position: LatLng(user.latitude, user.longitude),
-          infoWindow: InfoWindow(
-            title: user.name,
-            snippet: 'Active Petitioner',
-          ),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-        );
-      }).toSet();
-    });
-  }
-
-  @override
   Future<void> _initializeLocation() async {
     try {
       final position = await MapService.getCurrentLocation();
-      setState(() {
+      
+      if (!mounted) return;
+      
+    setState(() {
         _currentPosition = position;
         _isLoading = false;
       });
+      
       _updateMarkers();
-      _emitDetailedLocation(position);
+      
+      // Send initial location if connected
+      if (_socketService.isConnected) {
+        _sendTrackEvent(position);
+      }
       
       _startLocationTracking();
     } catch (e) {
-      setState(() => _isLoading = false);
-      _showError(e.toString());
+      debugPrint('🔴 Error getting location: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showError(e.toString());
+      }
     }
   }
 
@@ -556,7 +524,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     
     final LocationSettings locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 10,
+      distanceFilter: 10, // Only update when moved at least 10 meters
       timeLimit: Duration(seconds: 10),
     );
     
@@ -581,10 +549,11 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
       _updateMarkers();
     });
     
-    final now = DateTime.now();
-    if (now.difference(_lastEmitTime).inMilliseconds >= _minEmitIntervalMs) {
-      _emitDetailedLocation(position);
-      _lastEmitTime = now;
+    // Check if we should send a location update
+    if (_shouldSendLocationUpdate(position)) {
+      _sendTrackEvent(position);
+      _lastSentPosition = position;
+      _lastEmitTime = DateTime.now();
     }
     
     if (_isTrackingEnabled && !_userInteractedWithMap && _mapController != null) {
@@ -592,25 +561,95 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     }
   }
 
-  void _emitDetailedLocation(Position position) {
-    if (!_socketConnected) return;
+  // Helper method to decide if we should send a location update
+  bool _shouldSendLocationUpdate(Position position) {
+    final now = DateTime.now();
     
-    _socketService.emit('update_location', {
-      'latitude': position.latitude.toString(),
-      'longitude': position.longitude.toString(),
-      'accuracy': position.accuracy.toString(),
-      'altitude': position.altitude.toString(),
-      'speed': position.speed.toString(),
-      'heading': position.heading.toString(),
-      'timestamp': position.timestamp?.millisecondsSinceEpoch.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+    // Check time since last update
+    final timeCondition = _lastEmitTime == null || 
+        now.difference(_lastEmitTime).inMilliseconds >= _minEmitIntervalMs;
+    
+    // Check distance if we have a previous position
+    if (_lastSentPosition != null) {
+      final distance = Geolocator.distanceBetween(
+        _lastSentPosition!.latitude, 
+        _lastSentPosition!.longitude,
+        position.latitude, 
+        position.longitude
+      );
+      
+      // Only send if moved at least 10 meters AND enough time has passed
+      return distance >= 10 && timeCondition;
+    }
+    
+    // If no previous position, just check time
+    return timeCondition;
+  }
+
+  void _sendTrackEvent(Position position) {
+    if (!_socketService.isConnected) {
+      debugPrint('❌ Socket.IO not connected, cannot send track event');
+      return;
+    }
+    
+    try {
+      // Get the profile name (you may need to adjust based on your data model)
+      final String name = "Petitioner"; // Replace with actual name if available
+      final String photo = ""; // Replace with actual photo URL if available
+      final String id = _socketService.getUserId() ?? "unknown";
+      
+      // Prepare location data
+      final locationData = {
+        "longitude": position.longitude.toString(),
+        "latitude": position.latitude.toString(),
+        "name": name,
+        "photo": photo,
+        "id": id,
+        "accuracy": position.accuracy.toString(),
+        "altitude": position.altitude.toString(),
+        "speed": position.speed.toString(),
+        "heading": position.heading.toString(),
+        "timestamp": position.timestamp?.millisecondsSinceEpoch.toString() ?? 
+                    DateTime.now().millisecondsSinceEpoch.toString(),
+      };
+      
+      // Send the track event
+      _socketService.sendTrackEvent(locationData);
+      debugPrint('📍 Sent track event: ${position.latitude}, ${position.longitude}');
+    } catch (e) {
+      debugPrint('🔴 Error sending track event: $e');
+    }
+  }
+
+  void _updateUserMarkers() {
+    setState(() {
+      _petitionerMarkers = _userLocations.values.map((user) {
+        return Marker(
+          markerId: MarkerId('user_${user.id}'),
+          position: LatLng(user.latitude, user.longitude),
+          infoWindow: InfoWindow(
+            title: user.name,
+            snippet: 'Active Petitioner',
+          ),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+        );
+      }).toSet();
     });
-    
-    debugPrint('Emitted detailed location update to server');
   }
 
   void _onCameraMove(CameraPosition position) {
     if (_isTrackingEnabled && !_animatingToCurrentLocation) {
       _userInteractedWithMap = true;
+    }
+  }
+
+  void _checkSocketConnection() {
+    if (!_socketService.isConnected && _currentPosition != null) {
+      debugPrint('💡 Periodic check: Socket.IO not connected, attempting to reconnect...');
+      final userId = _socketService.getUserId();
+      if (userId != null) {
+        _socketService.connect(userId);
+      }
     }
   }
 
