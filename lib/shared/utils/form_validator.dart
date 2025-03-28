@@ -37,7 +37,7 @@ class FormValidators {
   static String? validatePassword(String? password) {
     if (password!.isEmpty) return "Password is required";
     String pattern =
-        r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~%]).{8,}$';
+        r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-3])(?=.*?[!@#\$&*~%]).{4,}$';
     RegExp regex = RegExp(pattern);
 
     if (!regex.hasMatch(password)) {
