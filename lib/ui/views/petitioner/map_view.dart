@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:ballot_access_pro/core/locator.dart';
 import 'package:ballot_access_pro/models/territory_houses.dart';
+import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:ballot_access_pro/shared/widgets/add_house_bottom_sheet.dart';
 import 'package:ballot_access_pro/ui/widgets/map/house_status_filter.dart';
 import 'package:ballot_access_pro/ui/widgets/map/house_legend.dart';
@@ -45,6 +48,12 @@ class _MapViewState extends State<MapView> {
   Set<Polyline> _territoryPolylines = {};
   Set<Marker> _filteredHouseMarkers = {};
   TerritoryHouses? _houses;
+  StreamSubscription<Position>? _positionStreamSubscription;
+  bool _isTrackingEnabled = true;
+  bool _userInteractedWithMap = false;
+  DateTime _lastEmitTime = DateTime.now();
+  final int _minEmitIntervalMs = 5000;
+  bool _animatingToCurrentLocation = false;
 
   @override
   void initState() {
@@ -54,6 +63,7 @@ class _MapViewState extends State<MapView> {
 
   @override
   void dispose() {
+    _positionStreamSubscription?.cancel();
     _socketService.dispose();
     if (_mapController != null) {
       _mapController!.dispose();
@@ -201,7 +211,9 @@ class _MapViewState extends State<MapView> {
         _isLoading = false;
       });
       _updateMarkers();
-      _emitLocation(); // Emit location when we get it
+      _emitDetailedLocation(position);
+      
+      _startLocationTracking();
     } catch (e) {
       setState(() => _isLoading = false);
       _showError(e.toString());
@@ -251,11 +263,16 @@ class _MapViewState extends State<MapView> {
 
   void _animateToCurrentLocation() {
     if (_mapController == null || _currentPosition == null) return;
+    
+    _animatingToCurrentLocation = true;
       _mapController!.animateCamera(
         CameraUpdate.newCameraPosition(
         MapService.getCameraPosition(_currentPosition!),
       ),
-    );
+    ).then((_) {
+      _animatingToCurrentLocation = false;
+      _userInteractedWithMap = false;
+    });
   }
 
   Future<void> _fetchPetitionersAndVoters() async {
@@ -517,6 +534,69 @@ class _MapViewState extends State<MapView> {
     );
   }
 
+  void _startLocationTracking() {
+    _positionStreamSubscription?.cancel();
+    
+    final LocationSettings locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 10,
+      timeLimit: Duration(seconds: 10),
+    );
+    
+    _positionStreamSubscription = Geolocator.getPositionStream(
+      locationSettings: locationSettings
+    ).listen((Position position) {
+      _handlePositionUpdate(position);
+    }, onError: (error) {
+      debugPrint('Error from location stream: $error');
+    }, onDone: () {
+      debugPrint('Location stream completed');
+    });
+    
+    debugPrint('Started continuous location tracking');
+  }
+
+  void _handlePositionUpdate(Position position) {
+    if (!mounted) return;
+    
+    setState(() {
+      _currentPosition = position;
+      _updateMarkers();
+    });
+    
+    final now = DateTime.now();
+    if (now.difference(_lastEmitTime).inMilliseconds >= _minEmitIntervalMs) {
+      _emitDetailedLocation(position);
+      _lastEmitTime = now;
+    }
+    
+    if (_isTrackingEnabled && !_userInteractedWithMap && _mapController != null) {
+      _animateToCurrentLocation();
+    }
+  }
+
+  void _emitDetailedLocation(Position position) {
+    if (!_socketConnected) return;
+    
+    _socketService.emit('update_location', {
+      'latitude': position.latitude.toString(),
+      'longitude': position.longitude.toString(),
+      'accuracy': position.accuracy.toString(),
+      'altitude': position.altitude.toString(),
+      'speed': position.speed.toString(),
+      'heading': position.heading.toString(),
+      'timestamp': position.timestamp?.millisecondsSinceEpoch.toString() ?? DateTime.now().millisecondsSinceEpoch.toString(),
+    });
+    
+    debugPrint('Emitted detailed location update to server');
+  }
+
+  void _onCameraMove(CameraPosition position) {
+    if (_isTrackingEnabled && !_animatingToCurrentLocation) {
+      _userInteractedWithMap = true;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -531,12 +611,12 @@ class _MapViewState extends State<MapView> {
               initialCameraPosition: _currentPosition != null
                   ? MapService.getCameraPosition(_currentPosition!)
                   : const CameraPosition(
-                      target: LatLng(40.7128, -74.0060), // New York as default
+                      target: LatLng(40.7128, -74.0060),
                       zoom: 12,
                     ),
               mapType: _currentMapType,
-                  myLocationEnabled: true,
-                  myLocationButtonEnabled: false,
+              myLocationEnabled: true,
+              myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
               mapToolbarEnabled: false,
               markers: {
@@ -548,6 +628,7 @@ class _MapViewState extends State<MapView> {
               polygons: _territoryPolygons,
               polylines: _territoryPolylines,
               onMapCreated: _onMapCreated,
+              onCameraMove: _onCameraMove,
               key: const ValueKey('google_map'),
               onLongPress: _handleMapLongPress,
             ),
@@ -577,11 +658,17 @@ class _MapViewState extends State<MapView> {
             bottom: 16.h,
             right: 16.w,
             child: FloatingActionButton(
-                  heroTag: 'locate',
-                  mini: true,
-                  backgroundColor: Colors.white,
-                  onPressed: _animateToCurrentLocation,
-                  child: const Icon(Icons.my_location, color: AppColors.primary),
+              heroTag: 'locate',
+              mini: true,
+              backgroundColor: Colors.white,
+              onPressed: () {
+                _animateToCurrentLocation();
+                setState(() {
+                  _isTrackingEnabled = true;
+                  _userInteractedWithMap = false;
+                });
+              },
+              child: const Icon(Icons.my_location, color: AppColors.primary),
             ),
           ),
         ],
