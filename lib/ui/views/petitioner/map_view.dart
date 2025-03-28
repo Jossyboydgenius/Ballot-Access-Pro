@@ -7,6 +7,7 @@ import 'package:ballot_access_pro/ui/widgets/map/house_status_filter.dart';
 import 'package:ballot_access_pro/ui/widgets/map/house_legend.dart';
 import 'package:ballot_access_pro/ui/widgets/map/map_type_toggle.dart';
 import 'package:ballot_access_pro/ui/widgets/map/house_details_bottom_sheet.dart';
+import 'package:ballot_access_pro/ui/widgets/map/filtered_houses_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -489,6 +490,48 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     setState(() {
       selectedStatus = status;
       _filterMarkersByStatus();
+    });
+    
+    // Show bottom sheet with houses filtered by the selected status
+    if (status.isNotEmpty && _houses != null) {
+      _showFilteredHousesBottomSheet(status);
+    }
+  }
+  
+  void _showFilteredHousesBottomSheet(String status) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+      ),
+      builder: (context) => FilteredHousesBottomSheet(
+        status: status,
+        houses: _houses!.docs,
+        onViewHouse: _navigateToHouse,
+      ),
+    );
+  }
+  
+  void _navigateToHouse(HouseVisit house) {
+    if (_mapController == null) return;
+    
+    // Animate to the house's position
+    _mapController!.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: LatLng(house.lat, house.long),
+          zoom: 18.0,
+        ),
+      ),
+    );
+    
+    // After a short delay, show the house details
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        _showHouseDetails(house);
+      }
     });
   }
   
