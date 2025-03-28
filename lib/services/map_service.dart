@@ -80,7 +80,7 @@ class MapService {
       "elementType": "labels",
       "stylers": [
         {
-          "visibility": "off"
+          "visibility": "on"
         }
       ]
     },
@@ -89,7 +89,7 @@ class MapService {
       "elementType": "labels",
       "stylers": [
         {
-          "visibility": "off"
+          "visibility": "on"
         }
       ]
     },
