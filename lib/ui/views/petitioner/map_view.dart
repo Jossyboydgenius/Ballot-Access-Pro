@@ -21,6 +21,7 @@ import 'package:ballot_access_pro/services/local_storage_service.dart';
 import 'package:ballot_access_pro/services/territory_service.dart';
 import 'dart:convert';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 
 class MapView extends StatefulWidget {
   const MapView({super.key});
@@ -29,7 +30,7 @@ class MapView extends StatefulWidget {
   State<MapView> createState() => _MapViewState();
 }
 
-class _MapViewState extends State<MapView> {
+class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   GoogleMapController? _mapController;
   Position? _currentPosition;
   Set<Marker> _markers = {};
@@ -56,6 +57,9 @@ class _MapViewState extends State<MapView> {
   bool _animatingToCurrentLocation = false;
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   void initState() {
     super.initState();
     _initializeMap();
@@ -64,12 +68,18 @@ class _MapViewState extends State<MapView> {
   @override
   void dispose() {
     _positionStreamSubscription?.cancel();
-    _socketService.dispose();
+    _removeSocketListeners();
     if (_mapController != null) {
       _mapController!.dispose();
       _mapController = null;
     }
     super.dispose();
+  }
+
+  void _removeSocketListeners() {
+    if (_socketService.isInitialized) {
+      _socketService.off('location_update');
+    }
   }
 
   Future<void> _initializeMap() async {
@@ -116,6 +126,8 @@ class _MapViewState extends State<MapView> {
     try {
       debugPrint('Initializing socket connection...');
       final token = await locator<LocalStorageService>().getStorageValue(LocalStorageKeys.accessToken);
+      final userId = await locator<LocalStorageService>().getStorageValue(LocalStorageKeys.userId);
+      
       if (token == null) {
         debugPrint('No auth token found for socket connection');
         if (mounted) {
@@ -125,8 +137,18 @@ class _MapViewState extends State<MapView> {
         }
         return;
       }
+      
+      if (userId == null) {
+        debugPrint('No user ID found for socket connection');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('User ID not found')),
+          );
+        }
+        return;
+      }
 
-      _socketService = SocketService.getInstance(token);
+      _socketService = SocketService.getInstance(token, userId);
       _setupSocketListeners();
     } catch (e, stackTrace) {
       debugPrint('Error in _initializeSocket: $e');
@@ -140,30 +162,25 @@ class _MapViewState extends State<MapView> {
       return;
     }
 
-    _socketService.socket.onConnect((_) {
-      if (!mounted) return;
-      debugPrint('Socket connected successfully');
-      setState(() => _socketConnected = true);
-      if (_currentPosition != null) {
-        _emitLocation();
+    setState(() => _socketConnected = _socketService.isConnected);
+
+    _socketService.on('connect', (_) {
+      if (mounted) {
+        setState(() => _socketConnected = true);
+        if (_currentPosition != null) {
+          _emitLocation();
+        }
       }
     });
 
-    _socketService.socket.onDisconnect((_) {
-      debugPrint('Socket disconnected');
-      setState(() => _socketConnected = false);
+    _socketService.on('disconnect', (_) {
+      if (mounted) {
+        setState(() => _socketConnected = false);
+      }
     });
 
-    _socketService.socket.onConnectError((data) {
-      debugPrint('Socket connection error: $data');
-    });
-
-    _socketService.socket.onError((data) {
-      debugPrint('Socket error: $data');
-    });
-
-    _socketService.socket.on('location_update', (data) {
-      if (data != null) {
+    _socketService.on('location_update', (data) {
+      if (data != null && mounted) {
         try {
           final userLocation = UserLocation.fromJson(data);
         setState(() {
@@ -599,6 +616,8 @@ class _MapViewState extends State<MapView> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+    
     return Scaffold(
       body: Stack(
         children: [
@@ -615,8 +634,8 @@ class _MapViewState extends State<MapView> {
                       zoom: 12,
                     ),
               mapType: _currentMapType,
-              myLocationEnabled: true,
-              myLocationButtonEnabled: false,
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
               mapToolbarEnabled: false,
               markers: {
@@ -658,9 +677,9 @@ class _MapViewState extends State<MapView> {
             bottom: 16.h,
             right: 16.w,
             child: FloatingActionButton(
-              heroTag: 'locate',
-              mini: true,
-              backgroundColor: Colors.white,
+                  heroTag: 'locate',
+                  mini: true,
+                  backgroundColor: Colors.white,
               onPressed: () {
                 _animateToCurrentLocation();
                 setState(() {
@@ -668,7 +687,7 @@ class _MapViewState extends State<MapView> {
                   _userInteractedWithMap = false;
                 });
               },
-              child: const Icon(Icons.my_location, color: AppColors.primary),
+                  child: const Icon(Icons.my_location, color: AppColors.primary),
             ),
           ),
         ],
