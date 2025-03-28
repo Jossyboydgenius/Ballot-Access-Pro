@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:ballot_access_pro/core/locator.dart';
 import 'package:ballot_access_pro/models/territory_houses.dart';
-import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:ballot_access_pro/shared/widgets/add_house_bottom_sheet.dart';
 import 'package:ballot_access_pro/ui/widgets/map/house_status_filter.dart';
 import 'package:ballot_access_pro/ui/widgets/map/house_legend.dart';
@@ -65,7 +64,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     _initializeMap();
     
     // Start a timer to check connection status periodically
-    Timer.periodic(Duration(seconds: 30), (timer) {
+    Timer.periodic(const Duration(seconds: 30), (timer) {
       _checkSocketConnection();
     });
   }
@@ -232,17 +231,47 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     _mapCreated = true;
     
     try {
-      // Convert the map style list to a JSON string
-      final String style = jsonEncode(MapService.mapStyle);
-      await controller.setMapStyle(style);
-      debugPrint('Map style set successfully');
+      // First try loading map style from file
+      String style;
+      try {
+        style = await DefaultAssetBundle.of(context).loadString('assets/map_style.json');
+        debugPrint('Loaded map style from assets file');
+      } catch (e) {
+        // If file loading fails, use a minimal style that ensures visibility
+        style = jsonEncode([
+          {
+            "featureType": "all",
+            "elementType": "all",
+            "stylers": [
+              {
+                "visibility": "on"
+              }
+            ]
+          }
+        ]);
+        debugPrint('Using fallback minimal map style: $e');
+      }
+      
+      // Apply the style
+      try {
+        await controller.setMapStyle(style);
+        debugPrint('Map style applied successfully');
+      } catch (e) {
+        debugPrint('Failed to apply map style: $e');
+      }
     } catch (e) {
       debugPrint('Error setting map style: $e');
-      // Continue even if map style fails
     }
     
+    // Force the map to reload tiles
     if (_currentPosition != null) {
-      _animateToCurrentLocation();
+      controller.animateCamera(CameraUpdate.newLatLngZoom(
+        LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+        15
+      ));
+      debugPrint('Animated to current position: ${_currentPosition!.latitude}, ${_currentPosition!.longitude}');
+    } else {
+      debugPrint('No current position available for initial camera animation');
     }
   }
 
@@ -464,8 +493,14 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   }
   
   void _onMapTypeChanged(MapType mapType) {
+    debugPrint('Changing map type to: $mapType');
     setState(() {
       _currentMapType = mapType;
+      
+      // If changing to satellite, use hybrid for better visibility
+      if (mapType == MapType.satellite) {
+        _currentMapType = MapType.hybrid;
+      }
     });
   }
 
@@ -526,7 +561,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   void _startLocationTracking() {
     _positionStreamSubscription?.cancel();
     
-    final LocationSettings locationSettings = LocationSettings(
+    final LocationSettings locationSettings = const LocationSettings(
       accuracy: LocationAccuracy.high,
       distanceFilter: 10, // Only update when moved at least 10 meters
       timeLimit: Duration(seconds: 10),
@@ -673,14 +708,15 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
               initialCameraPosition: _currentPosition != null
                   ? MapService.getCameraPosition(_currentPosition!)
                   : const CameraPosition(
-                      target: LatLng(40.7128, -74.0060),
+                      target: LatLng(40.7128, -74.0060), // Default to NYC if no position
                       zoom: 12,
                     ),
               mapType: _currentMapType,
-                  myLocationEnabled: true,
-                  myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
-              mapToolbarEnabled: false,
+              myLocationEnabled: true,
+              myLocationButtonEnabled: false, // Hide the default location button
+              zoomControlsEnabled: false, // Hide the zoom +/- buttons
+              mapToolbarEnabled: false, // Hide the navigation buttons that appear after marker tap
+              compassEnabled: false, // Hide the compass button
               markers: {
                 ..._markers,
                 ..._petitionerMarkers,
@@ -691,8 +727,27 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
               polylines: _territoryPolylines,
               onMapCreated: _onMapCreated,
               onCameraMove: _onCameraMove,
-              key: const ValueKey('google_map'),
+              key: ValueKey('google_map_${_currentMapType.toString()}'),
               onLongPress: _handleMapLongPress,
+              trafficEnabled: false,
+              buildingsEnabled: true,
+              indoorViewEnabled: false,
+              liteModeEnabled: false,
+              padding: EdgeInsets.zero,
+            ),
+          // Error indicator for debugging - will show if map fails to load
+          if (!_isLoading && !_mapCreated && _currentPosition != null)
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                  const Text('Map failed to load',
+                      style: TextStyle(color: Colors.red)),
+                  Text('Position: ${_currentPosition?.latitude}, ${_currentPosition?.longitude}',
+                      style: const TextStyle(fontSize: 12)),
+                ],
+              ),
             ),
           Positioned(
             top: 50.h,
@@ -706,7 +761,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
           Positioned(
             top: 120.h,
             left: 16.w,
-            child: HouseLegend(),
+            child: const HouseLegend(),
           ),
           Positioned(
             top: 120.h,
