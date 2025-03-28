@@ -405,6 +405,9 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
       position.longitude,
     );
 
+    // First get the territories
+    final territories = await TerritoryService.getTerritories();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -412,6 +415,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
       builder: (context) => AddHouseBottomSheet(
         currentAddress: address,
         selectedStatus: selectedStatus,
+        territories: territories, // Pass the already fetched territories
         onStatusSelected: (status) {
           setState(() => selectedStatus = status);
         },
@@ -448,9 +452,9 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
           
           Navigator.pop(context);
         },
-        ),
-      );
-    }
+      ),
+    );
+  }
 
   void _onStatusChanged(String status) {
     setState(() {
