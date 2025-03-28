@@ -49,36 +49,49 @@ class HouseStatusFilter extends StatelessWidget {
 
   Widget _buildStatusChip(String label, Color color) {
     final isSelected = selectedStatus == label;
-    return FilterChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 12.r,
-            height: 12.r,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
+    
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          // If already selected, deselect it
+          if (isSelected) {
+            onStatusChanged('');
+          } else {
+            onStatusChanged(label);
+          }
+        },
+        borderRadius: BorderRadius.circular(20.r),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+          decoration: BoxDecoration(
+            color: isSelected ? color : Colors.white,
+            border: Border.all(color: color),
+            borderRadius: BorderRadius.circular(20.r),
           ),
-          SizedBox(width: 8.w),
-          Text(
-            label,
-            style: AppTextStyle.regular12.copyWith(
-              color: isSelected ? Colors.white : Colors.black,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 12.r,
+                height: 12.r,
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                label,
+                style: AppTextStyle.regular12.copyWith(
+                  color: isSelected ? Colors.white : Colors.black,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
-      selected: isSelected,
-      onSelected: (bool selected) {
-        onStatusChanged(selected ? label : '');
-      },
-      backgroundColor: Colors.white,
-      selectedColor: color,
-      showCheckmark: false,
-      side: BorderSide(color: color),
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
     );
   }
 } 
