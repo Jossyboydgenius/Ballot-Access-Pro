@@ -61,13 +61,13 @@ class HouseStatusFilter extends StatelessWidget {
             onStatusChanged(label);
           }
         },
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(8.r),
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
           decoration: BoxDecoration(
             color: isSelected ? color : Colors.white,
             border: Border.all(color: color),
-            borderRadius: BorderRadius.circular(20.r),
+            borderRadius: BorderRadius.circular(8.r),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
