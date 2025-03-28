@@ -12,10 +12,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 
 class PetitionerHomeView extends StatefulWidget {
-  const PetitionerHomeView({super.key});
+  const PetitionerHomeView({Key? key}) : super(key: key);
 
   @override
-  State<PetitionerHomeView> createState() => _PetitionerHomeViewState();
+  _PetitionerHomeViewState createState() => _PetitionerHomeViewState();
 }
 
 class _PetitionerHomeViewState extends State<PetitionerHomeView> {
@@ -37,10 +37,12 @@ class _PetitionerHomeViewState extends State<PetitionerHomeView> {
     super.dispose();
   }
 
-  final List<Widget> _pages = const [
-    MapView(),
-    LeadsView(),
-    ProfileView(),
+  // Using IndexedStack instead of switching children
+  // This preserves the state of all child views
+  final List<Widget> _screens = [
+    const MapView(),
+    const LeadsView(),
+    const ProfileView(),
   ];
 
   @override
@@ -53,10 +55,17 @@ class _PetitionerHomeViewState extends State<PetitionerHomeView> {
         BlocProvider<ProfileBloc>.value(value: _profileBloc),
       ],
       child: Scaffold(
-        body: _pages[_currentIndex],
+        body: IndexedStack(
+          index: _currentIndex,
+          children: _screens,
+        ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
           selectedItemColor: AppColors.primary,
           unselectedItemColor: Colors.grey,
           type: BottomNavigationBarType.fixed,
@@ -64,18 +73,15 @@ class _PetitionerHomeViewState extends State<PetitionerHomeView> {
           unselectedLabelStyle: AppTextStyle.regular12,
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.map_outlined),
-              activeIcon: Icon(Icons.map),
+              icon: Icon(Icons.map),
               label: 'Map',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.people_outline),
-              activeIcon: Icon(Icons.people),
+              icon: Icon(Icons.people),
               label: 'Leads',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
+              icon: Icon(Icons.person),
               label: 'Profile',
             ),
           ],
