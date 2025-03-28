@@ -28,47 +28,60 @@ class AddHouseBottomSheet extends StatefulWidget {
 
 class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
   String? selectedTerritory;
+  late String localSelectedStatus;
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _votersController = TextEditingController();
   bool get _isFormValid => 
-      widget.selectedStatus.isNotEmpty && 
+      localSelectedStatus.isNotEmpty && 
       selectedTerritory != null &&
       _votersController.text.isNotEmpty &&
       int.tryParse(_votersController.text) != null;
 
   Widget _buildStatusChip(String label, Color color) {
-    final isSelected = widget.selectedStatus == label;
-    return FilterChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 12.r,
-            height: 12.r,
-            decoration: BoxDecoration(
-              color: isSelected ? color : Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: color),
-            ),
+    final isSelected = localSelectedStatus == label;
+    
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            // Update local state immediately
+            localSelectedStatus = isSelected ? '' : label;
+          });
+          // Notify parent
+          widget.onStatusSelected(isSelected ? '' : label);
+        },
+        borderRadius: BorderRadius.circular(8.r),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+          decoration: BoxDecoration(
+            color: isSelected ? color : Colors.white,
+            border: Border.all(color: color),
+            borderRadius: BorderRadius.circular(8.r),
           ),
-          SizedBox(width: 8.w),
-          Text(
-            label,
-            style: AppTextStyle.regular12.copyWith(
-              color: isSelected ? Colors.white : Colors.black,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 12.r,
+                height: 12.r,
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                label,
+                style: AppTextStyle.regular12.copyWith(
+                  color: isSelected ? Colors.white : Colors.black,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
-      selected: isSelected,
-      onSelected: (bool selected) {
-        widget.onStatusSelected(selected ? label : '');
-      },
-      backgroundColor: Colors.white,
-      selectedColor: color,
-      showCheckmark: false,
-      side: BorderSide(color: color),
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
     );
   }
 
@@ -266,6 +279,7 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
     _votersController.addListener(() {
       setState(() {});
     });
+    localSelectedStatus = widget.selectedStatus;
   }
 
   @override
@@ -273,6 +287,16 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
     _notesController.dispose();
     _votersController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(AddHouseBottomSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.selectedStatus != oldWidget.selectedStatus) {
+      setState(() {
+        localSelectedStatus = widget.selectedStatus;
+      });
+    }
   }
 }
 
