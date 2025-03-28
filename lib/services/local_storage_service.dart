@@ -3,53 +3,58 @@ import '../core/locator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 
-class LocalStorageKeys {
-  static String refreshToken = 'refreshToken';
-  static String accessToken = 'accessToken';
-  static String expiresIn = 'expiresIn';
-  static String debugName = 'debugName';
-  static String debugEmail = 'debugEmail';
-  static String debugPassword = 'debugPassword';
-  static String showedOnboarding = 'showedOnboarding';
-  static String timedOut = 'timedOut';
-  static String useBiometric = 'useBiometric';
+enum LocalStorageKeys {
+  accessToken,
+  refreshToken,
+  userId,
+  expiresIn,
+  debugName,
+  debugEmail,
+  debugPassword,
+  showedOnboarding,
+  timedOut,
+  useBiometric,
 }
 
 class LocalStorageService {
   final FlutterSecureStorage _storage = locator<FlutterSecureStorage>();
 
-  Future<String?> getStorageValue(String key) async {
+  String _keyToString(LocalStorageKeys key) {
+    return key.toString().split('.').last;
+  }
+
+  Future<String?> getStorageValue(LocalStorageKeys key) async {
     try {
-      return await _storage.read(key: key);
+      return await _storage.read(key: _keyToString(key));
     } catch (e) {
       return null;
     }
   }
 
-  Future<void> saveStorageValue(String key, String value) async {
+  Future<void> saveStorageValue(LocalStorageKeys key, String value) async {
     try {
-      await _storage.write(key: key, value: value);
+      await _storage.write(key: _keyToString(key), value: value);
     } catch (e) {
       debugPrint('Error saving to storage: $e');
     }
   }
 
   Future<void> clearAuthAll() async {
-    await _storage.delete(key: LocalStorageKeys.accessToken);
-    await _storage.delete(key: LocalStorageKeys.refreshToken);
-    await _storage.delete(key: LocalStorageKeys.expiresIn);
-    await _storage.delete(key: LocalStorageKeys.debugName);
-    await _storage.delete(key: LocalStorageKeys.debugEmail);
-    await _storage.delete(key: LocalStorageKeys.debugPassword);
-    await _storage.delete(key: LocalStorageKeys.expiresIn);
-    await _storage.delete(key: LocalStorageKeys.timedOut);
+    await _storage.delete(key: _keyToString(LocalStorageKeys.accessToken));
+    await _storage.delete(key: _keyToString(LocalStorageKeys.refreshToken));
+    await _storage.delete(key: _keyToString(LocalStorageKeys.expiresIn));
+    await _storage.delete(key: _keyToString(LocalStorageKeys.debugName));
+    await _storage.delete(key: _keyToString(LocalStorageKeys.debugEmail));
+    await _storage.delete(key: _keyToString(LocalStorageKeys.debugPassword));
+    await _storage.delete(key: _keyToString(LocalStorageKeys.expiresIn));
+    await _storage.delete(key: _keyToString(LocalStorageKeys.timedOut));
   }
 
   Future<void> clearAll() async => await _storage.deleteAll();
 
   Future<void> clearToken() async {
     try {
-      await _storage.delete(key: LocalStorageKeys.accessToken);
+      await _storage.delete(key: _keyToString(LocalStorageKeys.accessToken));
     } catch (e) {
       debugPrint('Error clearing token: $e');
     }
@@ -58,5 +63,10 @@ class LocalStorageService {
   Future<void> removeStorageValue(String key) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(key);
+  }
+
+  Future<void> saveLoginResponse(Map<String, dynamic> data) async {
+    await saveStorageValue(LocalStorageKeys.accessToken, data['jwt']);
+    await saveStorageValue(LocalStorageKeys.userId, data['id']);
   }
 }
