@@ -8,106 +8,97 @@ class SocketService {
   late IO.Socket socket;
   final String accessId;
   bool _isConnecting = false;
+  bool isInitialized = false;
+  bool isConnected = false;
 
   SocketService._internal(this.accessId) {
-    _initSocket();
+    // Constructor doesn't initialize socket anymore
   }
 
-  static SocketService getInstance(String accessId) {
-    _instance ??= SocketService._internal(accessId);
+  static SocketService getInstance(String token, String userId) {
+    _instance ??= SocketService._internal(userId);
+    
+    if (!_instance!.isInitialized) {
+      _instance!._initSocket(token, userId);
+    }
+    
     return _instance!;
   }
 
-  void _initSocket() {
+  void _initSocket(String token, String userId) {
     try {
       final baseUrl = locator<AppFlavorConfig>().socketUrl;
-      final url = '$baseUrl?accessID=$accessId';
-      debugPrint('Initializing socket connection to: $url');
+      final url = '$baseUrl?accessID=$userId';
+      
+      debugPrint('Initializing socket with URL: $url');
       
       socket = IO.io(
         url,
         IO.OptionBuilder()
-          .setTransports(['websocket'])
-          .setReconnectionAttempts(10)
-          .setReconnectionDelay(3000)
-          .setReconnectionDelayMax(10000)
-          .setTimeout(20000)
-          .enableReconnection()
-          .enableAutoConnect()
-          .setExtraHeaders({
-            'Connection': 'upgrade',
-            'Upgrade': 'websocket',
-            'Authorization': 'Bearer $accessId'
-          })
-          .build()
+            .setTransports(['websocket'])
+            .setExtraHeaders({'Authorization': 'Bearer $token'})
+            .enableAutoConnect()
+            .enableForceNew()
+            .build(),
       );
-
-      _setupSocketListeners();
+      
+      _setupBaseListeners();
+      isInitialized = true;
     } catch (e, stackTrace) {
       debugPrint('Error initializing socket: $e');
       debugPrint('Stack trace: $stackTrace');
     }
   }
 
-  void _setupSocketListeners() {
+  void _setupBaseListeners() {
     socket.onConnect((_) {
       debugPrint('Socket connected successfully');
       _isConnecting = false;
-    });
-
-    socket.onConnecting((_) {
-      debugPrint('Socket attempting to connect...');
-      _isConnecting = true;
+      isConnected = true;
     });
 
     socket.onDisconnect((_) {
       debugPrint('Socket disconnected');
-      _isConnecting = false;
-      _attemptReconnect();
+      isConnected = false;
     });
 
-    socket.onError((error) {
-      debugPrint('Socket error: $error');
-      if (!_isConnecting) {
-        _attemptReconnect();
-      }
+    socket.onConnectError((data) {
+      debugPrint('Socket connection error: $data');
+      isConnected = false;
     });
 
-    socket.onConnectError((error) {
-      debugPrint('Socket connection error: $error');
-      if (!_isConnecting) {
-        _attemptReconnect();
-      }
-    });
-
-    socket.onConnectTimeout((_) {
-      debugPrint('Socket connection timeout');
-      if (!_isConnecting) {
-        _attemptReconnect();
-      }
+    socket.onError((data) {
+      debugPrint('Socket error: $data');
     });
   }
 
-  void _attemptReconnect() {
-    if (!_isConnecting && !socket.connected) {
-      debugPrint('Attempting to reconnect socket...');
-      socket.connect();
+  void emit(String event, Map<String, dynamic> data) {
+    if (isInitialized) {
+      socket.emit(event, data);
+    } else {
+      debugPrint('Socket not initialized, cannot emit $event');
     }
   }
 
-  void emit(String event, dynamic data) {
-    if (socket.connected) {
-      socket.emit(event, data);
-    } else {
-      debugPrint('Socket not connected. Cannot emit event: $event');
-      _attemptReconnect();
+  void on(String event, Function(dynamic) callback) {
+    if (isInitialized) {
+      socket.on(event, callback);
+    }
+  }
+
+  void off(String event) {
+    if (isInitialized) {
+      socket.off(event);
     }
   }
 
   void dispose() {
-    socket.dispose();
-    _instance = null;
+    if (isInitialized) {
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('connect_error');
+      socket.off('error');
+      socket.off('location_update');
+    }
   }
-
-  bool get isInitialized => socket != null;
 } 
