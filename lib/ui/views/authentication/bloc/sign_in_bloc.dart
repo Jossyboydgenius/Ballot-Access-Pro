@@ -26,11 +26,19 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
       );
 
       if (response.status && response.data != null) {
-        // Save the JWT token to local storage
+        // Save both JWT token and user ID
         await _storageService.saveStorageValue(
           LocalStorageKeys.accessToken,
           response.data!.jwt!,
         );
+        
+        // Save user ID too if available
+        if (response.data!.id != null) {
+          await _storageService.saveStorageValue(
+            LocalStorageKeys.userId,
+            response.data!.id!,
+          );
+        }
 
         emit(state.copyWith(
           status: SignInStatus.success,
