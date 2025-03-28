@@ -4,12 +4,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:ballot_access_pro/shared/widgets/app_button.dart';
 import 'package:ballot_access_pro/shared/constants/app_spacing.dart';
+import 'package:ballot_access_pro/models/territory.dart';
 
 class AddHouseBottomSheet extends StatefulWidget {
   final String currentAddress;
   final Function(String) onStatusSelected;
   final Function(int, String) onAddHouse;
   final String selectedStatus;
+  final List<Territory> territories;
 
   const AddHouseBottomSheet({
     super.key,
@@ -17,6 +19,7 @@ class AddHouseBottomSheet extends StatefulWidget {
     required this.onStatusSelected,
     required this.onAddHouse,
     required this.selectedStatus,
+    required this.territories,
   });
 
   @override
@@ -32,15 +35,6 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
       selectedTerritory != null &&
       _votersController.text.isNotEmpty &&
       int.tryParse(_votersController.text) != null;
-
-  final List<String> territories = [
-    'Real Strongs',
-    'Flins Regents',
-    'Lake side',
-    'Broome St Territory',
-    'Lake Proximity',
-    'Mongoose Territory',
-  ];
 
   Widget _buildStatusChip(String label, Color color) {
     final isSelected = widget.selectedStatus == label;
@@ -152,13 +146,13 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
                     ),
                   ),
                   isExpanded: true,
-                  items: territories.map((String value) {
+                  items: widget.territories.map((Territory territory) {
                     return DropdownMenuItem<String>(
-                      value: value,
+                      value: territory.id,
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 12.w),
                         child: Text(
-                          value,
+                          territory.name,
                           style: AppTextStyle.regular14,
                         ),
                       ),
