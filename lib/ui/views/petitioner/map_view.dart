@@ -1,6 +1,10 @@
 import 'package:ballot_access_pro/core/locator.dart';
 import 'package:ballot_access_pro/models/territory_houses.dart';
 import 'package:ballot_access_pro/shared/widgets/add_house_bottom_sheet.dart';
+import 'package:ballot_access_pro/ui/widgets/map/house_status_filter.dart';
+import 'package:ballot_access_pro/ui/widgets/map/house_legend.dart';
+import 'package:ballot_access_pro/ui/widgets/map/map_type_toggle.dart';
+import 'package:ballot_access_pro/ui/widgets/map/house_details_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -151,10 +155,10 @@ class _MapViewState extends State<MapView> {
       if (data != null) {
         try {
           final userLocation = UserLocation.fromJson(data);
-          setState(() {
+        setState(() {
             _userLocations[userLocation.id] = userLocation;
             _updateUserMarkers();
-          });
+        });
         } catch (e) {
           debugPrint('Error parsing location update: $e');
         }
@@ -246,8 +250,8 @@ class _MapViewState extends State<MapView> {
 
   void _animateToCurrentLocation() {
     if (_mapController == null || _currentPosition == null) return;
-    _mapController!.animateCamera(
-      CameraUpdate.newCameraPosition(
+      _mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
         MapService.getCameraPosition(_currentPosition!),
       ),
     );
@@ -382,294 +386,7 @@ class _MapViewState extends State<MapView> {
       constraints: BoxConstraints(
         maxWidth: MediaQuery.of(context).size.width * 0.95, // Set width to 95% of screen width
       ),
-      builder: (context) => Container(
-        width: double.infinity, // Make container take full available width
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40.w,
-                height: 5.h,
-                margin: EdgeInsets.only(bottom: 16.h),
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2.5.r),
-                ),
-              ),
-            ),
-            Text(
-              house.address,
-              style: AppTextStyle.semibold16,
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              'Status: ${house.status.toUpperCase()}',
-              style: AppTextStyle.regular14.copyWith(
-                color: house.statusColor.startsWith('#')
-                  ? Color(int.parse('0xFF${house.statusColor.substring(1)}'))
-                  : Colors.black,
-              ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              'Registered Voters: ${house.registeredVoters}',
-              style: AppTextStyle.regular14,
-            ),
-            if (house.notes.isNotEmpty) ...[
-              SizedBox(height: 8.h),
-              Text(
-                'Notes: ${house.notes}',
-                style: AppTextStyle.regular14,
-              ),
-            ],
-            SizedBox(height: 8.h),
-            Text(
-              'Petitioner: ${house.petitioner.firstName} ${house.petitioner.lastName}',
-              style: AppTextStyle.regular14,
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              'Last Updated: ${DateFormat('MMM dd, yyyy HH:mm').format(house.updatedAt)}',
-              style: AppTextStyle.regular12.copyWith(color: Colors.grey),
-            ),
-            SizedBox(height: 16.h),
-          ],
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
-          else
-            GoogleMap(
-              initialCameraPosition: _currentPosition != null
-                  ? MapService.getCameraPosition(_currentPosition!)
-                  : const CameraPosition(
-                      target: LatLng(40.7128, -74.0060), // New York as default
-                      zoom: 12,
-                    ),
-              mapType: _currentMapType,
-              myLocationEnabled: true,
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
-              mapToolbarEnabled: false,
-              markers: {
-                ..._markers,
-                ..._petitionerMarkers,
-                ..._voterMarkers,
-                ..._houseMarkers,
-              },
-              polygons: _territoryPolygons,
-              polylines: _territoryPolylines,
-              onMapCreated: _onMapCreated,
-              key: const ValueKey('google_map'),
-              onLongPress: _handleMapLongPress,
-            ),
-          Positioned(
-            top: 50.h,
-            left: 16.w,
-            right: 16.w,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _buildStatusChip('Signed', AppColors.green100),
-                    SizedBox(width: 8.w),
-                    _buildStatusChip('Partially Signed', AppColors.green.withOpacity(0.6)),
-                    SizedBox(width: 8.w),
-                    _buildStatusChip('Come Back', Colors.blue),
-                    SizedBox(width: 8.w),
-                    _buildStatusChip('Not Home', Colors.yellow),
-                    SizedBox(width: 8.w),
-                    _buildStatusChip('BAS', Colors.red),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 120.h,
-            right: 16.w,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      debugPrint('Switching to normal map');
-                      setState(() {
-                        _currentMapType = MapType.normal;
-                      });
-                    },
-                    child: Text(
-                      'Map',
-                      style: AppTextStyle.regular14.copyWith(
-                        color: _currentMapType == MapType.normal 
-                            ? AppColors.primary 
-                            : Colors.grey,
-                      ),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      debugPrint('Switching to satellite map');
-                      setState(() {
-                        _currentMapType = MapType.satellite;
-                      });
-                    },
-                    child: Text(
-                      'Satellite',
-                      style: AppTextStyle.regular14.copyWith(
-                        color: _currentMapType == MapType.satellite 
-                            ? AppColors.primary 
-                            : Colors.grey,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            top: 120.h,
-            left: 16.w,
-            child: Container(
-              padding: EdgeInsets.all(12.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('House Status', style: AppTextStyle.semibold14),
-                  SizedBox(height: 8.h),
-                  _buildLegendItem('Signed', AppColors.green100),
-                  SizedBox(height: 2.h),
-                  _buildLegendItem('Partially Signed', AppColors.green.withOpacity(0.6)),
-                  SizedBox(height: 2.h),
-                  _buildLegendItem('Come Back', Colors.blue),
-                  SizedBox(height: 2.h),
-                  _buildLegendItem('Not Home', Colors.yellow),
-                  SizedBox(height: 2.h),
-                  _buildLegendItem('BAS', Colors.red),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 16.h,
-            right: 16.w,
-            child: FloatingActionButton(
-              heroTag: 'locate',
-              mini: true,
-              backgroundColor: Colors.white,
-              onPressed: _animateToCurrentLocation,
-              child: const Icon(Icons.my_location, color: AppColors.primary),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusChip(String label, Color color) {
-    final isSelected = selectedStatus == label;
-    return FilterChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 12.r,
-            height: 12.r,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-          ),
-          SizedBox(width: 8.w),
-          Text(
-            label,
-            style: AppTextStyle.regular12.copyWith(
-              color: isSelected ? Colors.white : Colors.black,
-            ),
-          ),
-        ],
-      ),
-      selected: isSelected,
-      onSelected: (bool selected) {
-        setState(() {
-          selectedStatus = selected ? label : '';
-        });
-      },
-      backgroundColor: Colors.white,
-      selectedColor: color,
-      showCheckmark: false,
-      side: BorderSide(color: color),
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-    );
-  }
-
-  Widget _buildLegendItem(String label, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 12.r,
-          height: 12.r,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        SizedBox(width: 8.w),
-        Text(
-          label,
-          style: AppTextStyle.regular12,
-        ),
-      ],
+      builder: (context) => HouseDetailsBottomSheet(house: house),
     );
   }
 
@@ -722,6 +439,90 @@ class _MapViewState extends State<MapView> {
           
           Navigator.pop(context);
         },
+        ),
+      );
+    }
+
+  void _onStatusChanged(String status) {
+    setState(() {
+      selectedStatus = status;
+    });
+  }
+  
+  void _onMapTypeChanged(MapType mapType) {
+    setState(() {
+      _currentMapType = mapType;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          if (_isLoading)
+            const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
+          else
+            GoogleMap(
+              initialCameraPosition: _currentPosition != null
+                  ? MapService.getCameraPosition(_currentPosition!)
+                  : const CameraPosition(
+                      target: LatLng(40.7128, -74.0060), // New York as default
+                      zoom: 12,
+                    ),
+              mapType: _currentMapType,
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+              mapToolbarEnabled: false,
+              markers: {
+                ..._markers,
+                ..._petitionerMarkers,
+                ..._voterMarkers,
+                ..._houseMarkers,
+              },
+              polygons: _territoryPolygons,
+              polylines: _territoryPolylines,
+              onMapCreated: _onMapCreated,
+              key: const ValueKey('google_map'),
+              onLongPress: _handleMapLongPress,
+            ),
+          Positioned(
+            top: 50.h,
+            left: 16.w,
+            right: 16.w,
+            child: HouseStatusFilter(
+              selectedStatus: selectedStatus,
+              onStatusChanged: _onStatusChanged,
+            ),
+          ),
+          Positioned(
+            top: 120.h,
+            left: 16.w,
+            child: HouseLegend(),
+          ),
+          Positioned(
+            top: 120.h,
+            right: 16.w,
+            child: MapTypeToggle(
+              currentMapType: _currentMapType,
+              onMapTypeChanged: _onMapTypeChanged,
+            ),
+          ),
+          Positioned(
+            bottom: 16.h,
+            right: 16.w,
+            child: FloatingActionButton(
+                  heroTag: 'locate',
+                  mini: true,
+                  backgroundColor: Colors.white,
+                  onPressed: _animateToCurrentLocation,
+                  child: const Icon(Icons.my_location, color: AppColors.primary),
+            ),
+          ),
+        ],
       ),
     );
   }
