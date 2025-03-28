@@ -10,15 +10,14 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:ballot_access_pro/shared/constants/app_colors.dart';
-import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:ballot_access_pro/services/map_service.dart';
 import 'package:ballot_access_pro/services/socket_service.dart';
 import 'package:ballot_access_pro/models/user_location.dart';
 import 'package:socket_io_client/socket_io_client.dart';
-import 'package:intl/intl.dart';
 import 'package:ballot_access_pro/services/local_storage_service.dart';
 import 'package:ballot_access_pro/services/territory_service.dart';
 import 'dart:convert';
+import 'dart:math';
 
 class MapView extends StatefulWidget {
   const MapView({super.key});
@@ -44,6 +43,8 @@ class _MapViewState extends State<MapView> {
   String? _currentTerritory;
   Set<Polygon> _territoryPolygons = {};
   Set<Polyline> _territoryPolylines = {};
+  Set<Marker> _filteredHouseMarkers = {};
+  TerritoryHouses? _houses;
 
   @override
   void initState() {
@@ -272,6 +273,9 @@ class _MapViewState extends State<MapView> {
         debugPrint('Successfully fetched ${houses.docs.length} houses');
         if (mounted) {
           setState(() {
+            // Store the houses data
+            _houses = houses;
+            
             _houseMarkers = houses.docs.map((house) {
               debugPrint('Creating marker for house: ${house.address} with status ${house.status}');
               return Marker(
@@ -285,6 +289,9 @@ class _MapViewState extends State<MapView> {
                 onTap: () => _showHouseDetails(house),
               );
             }).toSet();
+            
+            // Initialize filtered markers with all house markers
+            _filteredHouseMarkers = _houseMarkers;
           });
         }
       } else {
@@ -446,6 +453,7 @@ class _MapViewState extends State<MapView> {
   void _onStatusChanged(String status) {
     setState(() {
       selectedStatus = status;
+      _filterMarkersByStatus();
     });
   }
   
@@ -453,6 +461,60 @@ class _MapViewState extends State<MapView> {
     setState(() {
       _currentMapType = mapType;
     });
+  }
+
+  void _filterMarkersByStatus() {
+    if (selectedStatus.isEmpty) {
+      _filteredHouseMarkers = _houseMarkers;
+    } else {
+      _filteredHouseMarkers = _houseMarkers.where((marker) {
+        final String houseId = marker.markerId.value.replaceAll('house_', '');
+        final house = _findHouseById(houseId);
+        return house != null && house.status.toLowerCase() == selectedStatus.toLowerCase();
+      }).toSet();
+      
+      if (_filteredHouseMarkers.isNotEmpty && _mapController != null) {
+        final bounds = _calculateBounds(_filteredHouseMarkers);
+        _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50.0));
+      }
+    }
+  }
+
+  HouseVisit? _findHouseById(String id) {
+    if (_houses == null) return null;
+    
+    for (final house in _houses!.docs) {
+      if (house.id == id) {
+        return house;
+      }
+    }
+    return null;
+  }
+
+  LatLngBounds _calculateBounds(Set<Marker> markers) {
+    if (markers.isEmpty) {
+      return LatLngBounds(
+        southwest: const LatLng(40.70, -74.02),
+        northeast: const LatLng(40.73, -73.98),
+      );
+    }
+    
+    double? minLat, maxLat, minLng, maxLng;
+    
+    for (final marker in markers) {
+      final lat = marker.position.latitude;
+      final lng = marker.position.longitude;
+      
+      minLat = minLat == null ? lat : min(minLat, lat);
+      maxLat = maxLat == null ? lat : max(maxLat, lat);
+      minLng = minLng == null ? lng : min(minLng, lng);
+      maxLng = maxLng == null ? lng : max(maxLng, lng);
+    }
+    
+    return LatLngBounds(
+      southwest: LatLng(minLat!, minLng!),
+      northeast: LatLng(maxLat!, maxLng!),
+    );
   }
 
   @override
@@ -481,7 +543,7 @@ class _MapViewState extends State<MapView> {
                 ..._markers,
                 ..._petitionerMarkers,
                 ..._voterMarkers,
-                ..._houseMarkers,
+                ..._filteredHouseMarkers,
               },
               polygons: _territoryPolygons,
               polylines: _territoryPolylines,
