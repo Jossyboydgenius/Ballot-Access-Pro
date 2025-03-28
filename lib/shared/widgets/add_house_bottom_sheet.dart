@@ -27,6 +27,11 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
   String? selectedTerritory;
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _votersController = TextEditingController();
+  bool get _isFormValid => 
+      widget.selectedStatus.isNotEmpty && 
+      selectedTerritory != null &&
+      _votersController.text.isNotEmpty &&
+      int.tryParse(_votersController.text) != null;
 
   final List<String> territories = [
     'Real Strongs',
@@ -243,17 +248,30 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
             AppSpacing.v24(),
             AppButton(
               text: 'Add Pin',
-              onPressed: () {
-                final voters = int.tryParse(_votersController.text) ?? 0;
-                widget.onAddHouse(voters, _notesController.text);
-              },
-              style: AppTextStyle.semibold16.copyWith(color: Colors.white),
+              onPressed: _isFormValid 
+                  ? () {
+                      final voters = int.tryParse(_votersController.text) ?? 0;
+                      widget.onAddHouse(voters, _notesController.text);
+                    }
+                  : null,
+              style: AppTextStyle.semibold16.copyWith(
+                color: _isFormValid ? Colors.white : Colors.grey[400],
+              ),
+              backgroundColor: _isFormValid ? AppColors.primary : Colors.grey[300],
             ),
             AppSpacing.v16(),
           ],
         ),
       ),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _votersController.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
