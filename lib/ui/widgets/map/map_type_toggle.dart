@@ -29,34 +29,48 @@ class MapTypeToggle extends StatelessWidget {
         ],
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          TextButton(
-            onPressed: () {
-              onMapTypeChanged(MapType.normal);
-            },
-            child: Text(
-              'Map',
-              style: AppTextStyle.regular14.copyWith(
-                color: currentMapType == MapType.normal 
-                    ? AppColors.primary 
-                    : Colors.grey,
-              ),
-            ),
+          _buildToggleButton(
+            label: 'Map',
+            isSelected: currentMapType == MapType.normal,
+            onTap: () => onMapTypeChanged(MapType.normal),
           ),
-          TextButton(
-            onPressed: () {
-              onMapTypeChanged(MapType.satellite);
-            },
-            child: Text(
-              'Satellite',
-              style: AppTextStyle.regular14.copyWith(
-                color: currentMapType == MapType.satellite 
-                    ? AppColors.primary 
-                    : Colors.grey,
-              ),
-            ),
+          Container(
+            width: 1,
+            height: 24.h,
+            color: Colors.grey[300],
+          ),
+          _buildToggleButton(
+            label: 'Satellite',
+            isSelected: currentMapType == MapType.satellite || currentMapType == MapType.hybrid,
+            onTap: () => onMapTypeChanged(MapType.satellite),
           ),
         ],
+      ),
+    );
+  }
+  
+  Widget _buildToggleButton({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(4.r),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyle.regular14.copyWith(
+            color: isSelected ? AppColors.primary : Colors.grey,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
       ),
     );
   }
