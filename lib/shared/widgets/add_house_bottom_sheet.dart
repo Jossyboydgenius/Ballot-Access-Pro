@@ -8,7 +8,7 @@ import 'package:ballot_access_pro/shared/constants/app_spacing.dart';
 class AddHouseBottomSheet extends StatefulWidget {
   final String currentAddress;
   final Function(String) onStatusSelected;
-  final VoidCallback onAddHouse;
+  final Function(int, String) onAddHouse;
   final String selectedStatus;
 
   const AddHouseBottomSheet({
@@ -243,7 +243,10 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
             AppSpacing.v24(),
             AppButton(
               text: 'Add Pin',
-              onPressed: widget.onAddHouse,
+              onPressed: () {
+                final voters = int.tryParse(_votersController.text) ?? 0;
+                widget.onAddHouse(voters, _notesController.text);
+              },
               style: AppTextStyle.semibold16.copyWith(color: Colors.white),
             ),
             AppSpacing.v16(),
