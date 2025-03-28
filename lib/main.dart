@@ -28,6 +28,7 @@ Future<void> main() async {
   await setUpLocator(AppFlavorConfig(
     name: 'Ballot Access Pro',
     apiBaseUrl: dotenv.env['BASE_URL_PROD']!,
+    socketUrl: dotenv.env['SOCKET_URL_PROD']!,
     webUrl: dotenv.env['WEB_URL_PROD']!,
     sentryDsn: dotenv.env['SENTRY_DSN']!,
     mixpanelToken: dotenv.env['MIXPANEL_TOKEN_PROD']!,
