@@ -13,6 +13,24 @@ class HouseStatusFilter extends StatelessWidget {
     required this.onStatusChanged,
   }) : super(key: key);
 
+  // Convert UI display status to API status
+  String _getApiStatus(String displayStatus) {
+    switch (displayStatus.toLowerCase()) {
+      case 'signed':
+        return 'signed';
+      case 'partially signed':
+        return 'partially-signed';
+      case 'come back':
+        return 'comeback';
+      case 'not home':
+        return 'nothome';
+      case 'bas':
+        return 'bas';
+      default:
+        return displayStatus.toLowerCase();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -34,7 +52,8 @@ class HouseStatusFilter extends StatelessWidget {
           children: [
             _buildStatusChip('Signed', AppColors.green100),
             SizedBox(width: 8.w),
-            _buildStatusChip('Partially Signed', AppColors.green.withOpacity(0.6)),
+            _buildStatusChip(
+                'Partially Signed', AppColors.green.withOpacity(0.6)),
             SizedBox(width: 8.w),
             _buildStatusChip('Come Back', Colors.blue),
             SizedBox(width: 8.w),
@@ -48,8 +67,8 @@ class HouseStatusFilter extends StatelessWidget {
   }
 
   Widget _buildStatusChip(String label, Color color) {
-    final isSelected = selectedStatus == label;
-    
+    final isSelected = selectedStatus == _getApiStatus(label);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -58,7 +77,7 @@ class HouseStatusFilter extends StatelessWidget {
           if (isSelected) {
             onStatusChanged('');
           } else {
-            onStatusChanged(label);
+            onStatusChanged(_getApiStatus(label));
           }
         },
         borderRadius: BorderRadius.circular(8.r),
@@ -94,4 +113,4 @@ class HouseStatusFilter extends StatelessWidget {
       ),
     );
   }
-} 
+}
