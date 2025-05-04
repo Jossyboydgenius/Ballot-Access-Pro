@@ -1,3 +1,4 @@
+import 'package:ballot_access_pro/shared/navigation/app_routes.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -11,7 +12,6 @@ import 'package:ballot_access_pro/shared/widgets/app_rich_text.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:country_picker/country_picker.dart';
 import 'package:ballot_access_pro/shared/widgets/app_back_button.dart';
-import 'package:ballot_access_pro/ui/views/authentication/email_verification_view.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'bloc/sign_up_bloc.dart';
 import 'bloc/sign_up_event.dart';
@@ -31,7 +31,8 @@ class _SignUpViewState extends State<SignUpView> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController genderController = TextEditingController();
   final TextEditingController countryController = TextEditingController();
@@ -57,22 +58,23 @@ class _SignUpViewState extends State<SignUpView> {
   void _validateForm() {
     setState(() {
       isFormValid = nameController.text.isNotEmpty &&
-                   emailController.text.isNotEmpty &&
-                   passwordController.text.isNotEmpty &&
-                   confirmPasswordController.text.isNotEmpty &&
-                   addressController.text.isNotEmpty &&
-                   genderController.text.isNotEmpty &&
-                   countryController.text.isNotEmpty &&
-                   phoneController.text.isNotEmpty &&
-                   FormValidators.isNameValid(nameController.text) == null &&
-                   FormValidators.validateEmail(emailController.text) == null &&
-                   FormValidators.validatePassword(passwordController.text) == null &&
-                   FormValidators.checkIfPasswordSame(
-                     confirmPasswordController.text,
-                     passwordController.text,
-                   ) == null &&
-                   FormValidators.validateAddress(addressController.text) == null &&
-                   FormValidators.validateGender(genderController.text) == null;
+          emailController.text.isNotEmpty &&
+          passwordController.text.isNotEmpty &&
+          confirmPasswordController.text.isNotEmpty &&
+          addressController.text.isNotEmpty &&
+          genderController.text.isNotEmpty &&
+          countryController.text.isNotEmpty &&
+          phoneController.text.isNotEmpty &&
+          FormValidators.isNameValid(nameController.text) == null &&
+          FormValidators.validateEmail(emailController.text) == null &&
+          FormValidators.validatePassword(passwordController.text) == null &&
+          FormValidators.checkIfPasswordSame(
+                confirmPasswordController.text,
+                passwordController.text,
+              ) ==
+              null &&
+          FormValidators.validateAddress(addressController.text) == null &&
+          FormValidators.validateGender(genderController.text) == null;
     });
   }
 
@@ -90,8 +92,9 @@ class _SignUpViewState extends State<SignUpView> {
   }
 
   String get displayGender {
-    return genderController.text.isNotEmpty 
-        ? genderController.text[0].toUpperCase() + genderController.text.substring(1)
+    return genderController.text.isNotEmpty
+        ? genderController.text[0].toUpperCase() +
+            genderController.text.substring(1)
         : '';
   }
 
@@ -110,15 +113,7 @@ class _SignUpViewState extends State<SignUpView> {
         }
 
         if (state.status == SignUpStatus.success) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => EmailVerificationView(
-                email: emailController.text,
-                userId: state.user!.id,
-              ),
-            ),
-          );
+          NavigationService.pushReplacementNamed(AppRoutes.petitionerHomeView);
         }
       },
       child: Scaffold(
@@ -200,7 +195,8 @@ class _SignUpViewState extends State<SignUpView> {
                             ),
                             contentPadding: EdgeInsets.symmetric(vertical: 8.h),
                             content: SizedBox(
-                              width: MediaQuery.of(context).size.width - 44.w, // Match app padding (22.w from each side)
+                              width: MediaQuery.of(context).size.width -
+                                  44.w, // Match app padding (22.w from each side)
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -215,7 +211,8 @@ class _SignUpViewState extends State<SignUpView> {
                                       });
                                       Navigator.pop(context);
                                     },
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 24.w),
+                                    contentPadding:
+                                        EdgeInsets.symmetric(horizontal: 24.w),
                                   ),
                                   ListTile(
                                     title: Text(
@@ -228,7 +225,8 @@ class _SignUpViewState extends State<SignUpView> {
                                       });
                                       Navigator.pop(context);
                                     },
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 24.w),
+                                    contentPadding:
+                                        EdgeInsets.symmetric(horizontal: 24.w),
                                   ),
                                 ],
                               ),
@@ -279,15 +277,18 @@ class _SignUpViewState extends State<SignUpView> {
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8.r),
-                          borderSide: const BorderSide(color: AppColors.grey200),
+                          borderSide:
+                              const BorderSide(color: AppColors.grey200),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8.r),
-                          borderSide: const BorderSide(color: AppColors.grey200),
+                          borderSide:
+                              const BorderSide(color: AppColors.grey200),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8.r),
-                          borderSide: const BorderSide(color: AppColors.primary),
+                          borderSide:
+                              const BorderSide(color: AppColors.primary),
                         ),
                       ),
                       initialCountryCode: 'US',
@@ -314,11 +315,13 @@ class _SignUpViewState extends State<SignUpView> {
                       text: 'Sign up',
                       loading: _isLoading,
                       textColor: Colors.white,
-                      style: AppTextStyle.semibold16.copyWith(color: Colors.white),
+                      style:
+                          AppTextStyle.semibold16.copyWith(color: Colors.white),
                       onPressed: isFormValid
                           ? () {
                               if (formKey.currentState!.validate()) {
-                                final nameParts = nameController.text.trim().split(' ');
+                                final nameParts =
+                                    nameController.text.trim().split(' ');
                                 context.read<SignUpBloc>().add(
                                       SignUpSubmitted(
                                         firstName: nameParts[0],
@@ -360,4 +363,4 @@ class _SignUpViewState extends State<SignUpView> {
       ),
     );
   }
-} 
+}
