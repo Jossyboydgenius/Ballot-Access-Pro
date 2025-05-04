@@ -33,14 +33,12 @@ class EmailVerificationBloc
           LocalStorageKeys.accessToken,
           response.data!.jwt!,
         );
-        
+
         // Save user ID too if available
-        if (response.data!.id != null) {
-          await _storageService.saveStorageValue(
-            LocalStorageKeys.userId,
-            response.data!.id!,
-          );
-        }
+        await _storageService.saveStorageValue(
+          LocalStorageKeys.userId,
+          response.data!.id!,
+        );
 
         emit(state.copyWith(
           verificationStatus: EmailVerificationStatus.success,
@@ -89,4 +87,4 @@ class EmailVerificationBloc
       ));
     }
   }
-} 
+}
