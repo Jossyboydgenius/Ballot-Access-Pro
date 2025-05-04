@@ -31,14 +31,12 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
           LocalStorageKeys.accessToken,
           response.data!.jwt!,
         );
-        
+
         // Save user ID too if available
-        if (response.data!.id != null) {
-          await _storageService.saveStorageValue(
-            LocalStorageKeys.userId,
-            response.data!.id!,
-          );
-        }
+        await _storageService.saveStorageValue(
+          LocalStorageKeys.userId,
+          response.data!.id!,
+        );
 
         emit(state.copyWith(
           status: SignInStatus.success,
@@ -58,4 +56,4 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
       ));
     }
   }
-} 
+}
