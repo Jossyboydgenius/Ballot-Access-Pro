@@ -36,7 +36,8 @@ class ProfileView extends StatelessWidget {
           }
         },
         builder: (context, state) {
-          if (state.status == ProfileStatus.loading && state.petitioner == null) {
+          if (state.status == ProfileStatus.loading &&
+              state.petitioner == null) {
             return SingleChildScrollView(
               padding: EdgeInsets.all(16.w),
               child: Column(
@@ -146,6 +147,8 @@ class ProfileView extends StatelessWidget {
             ),
           ),
           SizedBox(height: 16.h),
+          // Commenting out the active/inactive status display
+          /*
           Container(
             padding: EdgeInsets.symmetric(
               horizontal: 12.w,
@@ -175,6 +178,7 @@ class ProfileView extends StatelessWidget {
               ],
             ),
           ),
+          */
         ],
       ),
     );
@@ -230,8 +234,8 @@ class ProfileView extends StatelessWidget {
               Expanded(
                 child: _buildStatItem(
                   'Territory',
-                  petitioner.territories.isNotEmpty 
-                      ? petitioner.territories.first 
+                  petitioner.territories.isNotEmpty
+                      ? petitioner.territories.first
                       : 'No Territory',
                   Icons.map,
                   Colors.orange,
@@ -332,7 +336,7 @@ class ProfileView extends StatelessWidget {
             Icons.logout,
             color: Colors.red,
             onTap: () {
-              context.read<ProfileBloc>().add(SignOut());
+              context.read<ProfileBloc>().add(const SignOut());
               NavigationService.pushReplacementNamed(AppRoutes.signInView);
             },
           ),
@@ -458,7 +462,7 @@ class ProfileView extends StatelessWidget {
         children: [
           Skeleton(height: 20.r, width: 20.r),
           SizedBox(height: 8.h),
-          Skeleton(),
+          const Skeleton(),
           SizedBox(height: 4.h),
           Skeleton(width: 60.w),
         ],
@@ -501,7 +505,7 @@ class ProfileView extends StatelessWidget {
         children: [
           Skeleton(height: 24.r, width: 24.r),
           SizedBox(width: 16.w),
-          Expanded(child: Skeleton()),
+          const Expanded(child: Skeleton()),
           SizedBox(width: 16.w),
           Skeleton(height: 24.r, width: 24.r),
         ],
@@ -520,4 +524,4 @@ class MenuItem {
     required this.title,
     required this.onTap,
   });
-} 
+}
