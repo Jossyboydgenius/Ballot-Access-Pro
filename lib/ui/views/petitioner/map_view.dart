@@ -8,6 +8,7 @@ import 'package:ballot_access_pro/ui/widgets/map/house_legend.dart';
 import 'package:ballot_access_pro/ui/widgets/map/map_type_toggle.dart';
 import 'package:ballot_access_pro/ui/widgets/map/house_details_bottom_sheet.dart';
 import 'package:ballot_access_pro/ui/widgets/map/filtered_houses_bottom_sheet.dart';
+import 'package:ballot_access_pro/ui/widgets/map/update_house_status_bottom_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -37,10 +38,10 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   bool _isLoading = true;
   bool _mapCreated = false;
   Set<Marker> _petitionerMarkers = {};
-  Set<Marker> _voterMarkers = {};
+  final Set<Marker> _voterMarkers = {};
   MapType _currentMapType = MapType.normal;
   late SocketService _socketService;
-  Map<String, UserLocation> _userLocations = {};
+  final Map<String, UserLocation> _userLocations = {};
   bool _socketConnected = false;
   Set<Marker> _houseMarkers = {};
   String? _currentTerritory;
@@ -55,6 +56,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   final int _minEmitIntervalMs = 5000;
   bool _animatingToCurrentLocation = false;
   Position? _lastSentPosition;
+  Timer? _socketCheckTimer;
 
   @override
   bool get wantKeepAlive => true;
@@ -63,7 +65,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   void initState() {
     super.initState();
     _initializeMap();
-    
+
     // Start a timer to check connection status periodically
     Timer.periodic(const Duration(seconds: 30), (timer) {
       _checkSocketConnection();
@@ -72,6 +74,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
 
   @override
   void dispose() {
+    _socketCheckTimer?.cancel();
     _positionStreamSubscription?.cancel();
     _socketService.close(); // Ensure Socket.IO connection is closed
     if (_mapController != null) {
@@ -84,26 +87,26 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   Future<void> _initializeMap() async {
     try {
       debugPrint('Initializing map...');
-      
+
       // 1. Initialize WebSocket connection
       debugPrint('Step 1: Initializing Socket.IO connection');
       await _initializeSocketConnection();
       if (!mounted) return;
-      
+
       // 2. Initialize location
       debugPrint('Step 2: Initializing device location');
       await _initializeLocation();
       if (!mounted) return;
-      
+
       // 3. Fetch houses (visits)
       debugPrint('Step 3: Fetching house visits');
       await _fetchHouses();
       if (!mounted) return;
-      
+
       // 4. Fetch territories last (to show boundaries)
       debugPrint('Step 4: Fetching territory boundaries');
       await _fetchTerritories();
-      
+
       setState(() {
         _isLoading = false;
       });
@@ -124,8 +127,9 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   Future<void> _initializeSocketConnection() async {
     try {
       debugPrint('Initializing Socket.IO connection...');
-      final userId = await locator<LocalStorageService>().getStorageValue(LocalStorageKeys.userId);
-      
+      final userId = await locator<LocalStorageService>()
+          .getStorageValue(LocalStorageKeys.userId);
+
       if (userId == null) {
         debugPrint('No user ID found for Socket.IO connection');
         if (mounted) {
@@ -138,24 +142,24 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
 
       // Get the SocketService singleton
       _socketService = SocketService.getInstance();
-      
+
       // Connect to the Socket.IO server
       await _socketService.connect(userId);
-      
+
       // Listen for connection status changes
       _socketService.connectionStatus.listen((isConnected) {
         if (mounted) {
           setState(() {
             _socketConnected = isConnected;
           });
-          
+
           // Send location update when reconnected
           if (isConnected && _currentPosition != null) {
             _sendTrackEvent(_currentPosition!);
           }
         }
       });
-      
+
       // Listen for location updates from other users
       _socketService.addListener('location_update', (data) {
         if (mounted) {
@@ -180,22 +184,28 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   Future<void> _initializeLocation() async {
     try {
       final position = await MapService.getCurrentLocation();
-      
+
       if (!mounted) return;
-      
-    setState(() {
+
+      setState(() {
         _currentPosition = position;
         _isLoading = false;
       });
-      
+
       _updateMarkers();
-      
-      // Send initial location if connected
-      if (_socketService.isConnected) {
-        _sendTrackEvent(position);
-      }
-      
+
+      // Store the current position as last sent regardless of socket status
+      _lastSentPosition = position;
+      _lastEmitTime = DateTime.now();
+
+      // Send location immediately upon obtaining it, even if socket appears disconnected
+      _sendTrackEvent(position);
+
+      // Start continuous location tracking with optimized settings
       _startLocationTracking();
+
+      // Schedule recurring checks for socket connection
+      _scheduleSocketChecks();
     } catch (e) {
       debugPrint('🔴 Error getting location: $e');
       if (mounted) {
@@ -203,6 +213,21 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
         _showError(e.toString());
       }
     }
+  }
+
+  void _scheduleSocketChecks() {
+    // Clear any existing timers
+    _socketCheckTimer?.cancel();
+
+    // Check socket connection every 10 seconds
+    _socketCheckTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      _checkSocketConnection();
+
+      // Force a location update if we have one
+      if (_currentPosition != null) {
+        _sendTrackEvent(_currentPosition!);
+      }
+    });
   }
 
   void _showError(String message) {
@@ -217,7 +242,8 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
       _markers = {
         Marker(
           markerId: const MarkerId('currentLocation'),
-          position: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          position:
+              LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
           infoWindow: const InfoWindow(title: 'Current Location'),
         ),
       };
@@ -227,15 +253,16 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   Future<void> _onMapCreated(GoogleMapController controller) async {
     debugPrint('Map created!');
     if (_mapCreated) return;
-    
+
     _mapController = controller;
     _mapCreated = true;
-    
+
     try {
       // First try loading map style from file
       String style;
       try {
-        style = await DefaultAssetBundle.of(context).loadString('assets/map_style.json');
+        style = await DefaultAssetBundle.of(context)
+            .loadString('assets/map_style.json');
         debugPrint('Loaded map style from assets file');
       } catch (e) {
         // If file loading fails, use a minimal style that ensures visibility
@@ -244,15 +271,13 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
             "featureType": "all",
             "elementType": "all",
             "stylers": [
-              {
-                "visibility": "on"
-              }
+              {"visibility": "on"}
             ]
           }
         ]);
         debugPrint('Using fallback minimal map style: $e');
       }
-      
+
       // Apply the style
       try {
         await controller.setMapStyle(style);
@@ -263,14 +288,13 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     } catch (e) {
       debugPrint('Error setting map style: $e');
     }
-    
+
     // Force the map to reload tiles
     if (_currentPosition != null) {
       controller.animateCamera(CameraUpdate.newLatLngZoom(
-        LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-        15
-      ));
-      debugPrint('Animated to current position: ${_currentPosition!.latitude}, ${_currentPosition!.longitude}');
+          LatLng(_currentPosition!.latitude, _currentPosition!.longitude), 15));
+      debugPrint(
+          'Animated to current position: ${_currentPosition!.latitude}, ${_currentPosition!.longitude}');
     } else {
       debugPrint('No current position available for initial camera animation');
     }
@@ -278,13 +302,15 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
 
   void _animateToCurrentLocation() {
     if (_mapController == null || _currentPosition == null) return;
-    
+
     _animatingToCurrentLocation = true;
-      _mapController!.animateCamera(
-        CameraUpdate.newCameraPosition(
+    _mapController!
+        .animateCamera(
+      CameraUpdate.newCameraPosition(
         MapService.getCameraPosition(_currentPosition!),
       ),
-    ).then((_) {
+    )
+        .then((_) {
       _animatingToCurrentLocation = false;
       _userInteractedWithMap = false;
     });
@@ -300,16 +326,17 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     try {
       final houses = await MapService.getHousesForTerritory();
       if (!mounted) return;
-      
+
       if (houses != null) {
         debugPrint('Successfully fetched ${houses.docs.length} houses');
         if (mounted) {
           setState(() {
             // Store the houses data
             _houses = houses;
-            
+
             _houseMarkers = houses.docs.map((house) {
-              debugPrint('Creating marker for house: ${house.address} with status ${house.status}');
+              debugPrint(
+                  'Creating marker for house: ${house.address} with status ${house.status}');
               return Marker(
                 markerId: MarkerId('house_${house.id}'),
                 position: LatLng(house.lat, house.long),
@@ -321,7 +348,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
                 onTap: () => _showHouseDetails(house),
               );
             }).toSet();
-            
+
             // Initialize filtered markers with all house markers
             _filteredHouseMarkers = _houseMarkers;
           });
@@ -344,52 +371,53 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     try {
       debugPrint('Fetching territories from API');
       final territories = await TerritoryService.getTerritories();
-      
+
       if (territories.isEmpty) {
         debugPrint('No territories found');
         return;
       }
-      
+
       debugPrint('Successfully fetched ${territories.length} territories');
-      
+
       if (mounted) {
         setState(() {
           // Create polygons for areas with a closed shape (polygon type)
           _territoryPolygons = territories
-              .where((territory) => 
-                territory.boundary?.type == 'polygon' && 
-                territory.boundary!.paths.isNotEmpty)
+              .where((territory) =>
+                  territory.boundary?.type == 'polygon' &&
+                  territory.boundary!.paths.isNotEmpty)
               .map((territory) {
-                debugPrint('Creating polygon for territory: ${territory.name}');
-                return Polygon(
-                  polygonId: PolygonId(territory.id),
-                  points: territory.boundary!.paths
-                      .map((point) => LatLng(point.lat, point.lng))
-                      .toList(),
-                  strokeWidth: 2,
-                  strokeColor: Colors.red,
-                  fillColor: Colors.red.withOpacity(0.3),
-                );
-              }).toSet();
-              
+            debugPrint('Creating polygon for territory: ${territory.name}');
+            return Polygon(
+              polygonId: PolygonId(territory.id),
+              points: territory.boundary!.paths
+                  .map((point) => LatLng(point.lat, point.lng))
+                  .toList(),
+              strokeWidth: 2,
+              strokeColor: Colors.red,
+              fillColor: Colors.red.withOpacity(0.3),
+            );
+          }).toSet();
+
           // Create polylines for paths (polyline type)
           _territoryPolylines = territories
-              .where((territory) => 
-                territory.boundary?.type == 'polyline' && 
-                territory.boundary!.paths.isNotEmpty)
+              .where((territory) =>
+                  territory.boundary?.type == 'polyline' &&
+                  territory.boundary!.paths.isNotEmpty)
               .map((territory) {
-                debugPrint('Creating polyline for territory: ${territory.name}');
-                return Polyline(
-                  polylineId: PolylineId(territory.id),
-                  points: territory.boundary!.paths
-                      .map((point) => LatLng(point.lat, point.lng))
-                      .toList(),
-                  width: 3,
-                  color: Colors.red,
-                );
-              }).toSet();
-              
-          debugPrint('Created ${_territoryPolygons.length} polygons and ${_territoryPolylines.length} polylines');
+            debugPrint('Creating polyline for territory: ${territory.name}');
+            return Polyline(
+              polylineId: PolylineId(territory.id),
+              points: territory.boundary!.paths
+                  .map((point) => LatLng(point.lat, point.lng))
+                  .toList(),
+              width: 3,
+              color: Colors.red,
+            );
+          }).toSet();
+
+          debugPrint(
+              'Created ${_territoryPolygons.length} polygons and ${_territoryPolylines.length} polylines');
         });
       }
     } catch (e) {
@@ -400,17 +428,21 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   BitmapDescriptor _getMarkerIconForStatus(String status) {
     switch (status.toLowerCase()) {
       case 'signed':
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
+        // Deeper green for signed
+        return BitmapDescriptor.defaultMarkerWithHue(90.0);
       case 'partially signed':
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueCyan);
+        // Cyan/teal color for partially signed (distinct from green)
+        return BitmapDescriptor.defaultMarkerWithHue(160.0);
       case 'come back':
         return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
       case 'not home':
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow);
+        return BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueYellow);
       case 'bas':
         return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
       default:
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueViolet);
+        return BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueViolet);
     }
   }
 
@@ -423,9 +455,64 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
       ),
       constraints: BoxConstraints(
-        maxWidth: MediaQuery.of(context).size.width * 0.95, // Set width to 95% of screen width
+        maxWidth: MediaQuery.of(context).size.width * 0.95,
       ),
-      builder: (context) => HouseDetailsBottomSheet(house: house),
+      builder: (context) => HouseDetailsBottomSheet(
+        house: house,
+        onUpdateTap: _showUpdateHouseStatus,
+      ),
+    );
+  }
+
+  void _showUpdateHouseStatus(HouseVisit house) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => UpdateHouseStatusBottomSheet(
+        house: house,
+        onUpdateStatus: (status, leadData) {
+          // Store local reference to context
+          final scaffoldMessenger = ScaffoldMessenger.of(context);
+          final currentContext = context;
+
+          // Execute the update asynchronously after the bottom sheet is closed
+          Future.microtask(() async {
+            // Show loading indicator if still mounted
+            if (Navigator.canPop(currentContext)) {
+              scaffoldMessenger.showSnackBar(
+                const SnackBar(content: Text('Updating house status...')),
+              );
+            }
+
+            // Call the API to update the status
+            final success = await MapService.updateHouseStatus(
+              markerId: house.id,
+              status: status,
+              lead: leadData,
+            );
+
+            // Check if we can still show feedback
+            if (mounted) {
+              scaffoldMessenger.showSnackBar(
+                SnackBar(
+                  content: Text(
+                    leadData != null
+                        ? 'Pin Status Updated and Lead Created'
+                        : 'Pin Status Updated',
+                  ),
+                  backgroundColor: success ? Colors.green : Colors.red,
+                ),
+              );
+
+              // Only refresh houses if successful and mounted
+              if (success) {
+                await _fetchHouses();
+              }
+            }
+          });
+        },
+      ),
     );
   }
 
@@ -454,7 +541,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Adding house visit...')),
           );
-          
+
           // Add the house visit
           final success = await MapService.addHouseVisit(
             lat: position.latitude,
@@ -465,13 +552,13 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
             registeredVoters: voters,
             note: notes,
           );
-          
+
           // Handle the result
           if (success) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('House visit added successfully')),
             );
-            
+
             // Refresh houses
             await _fetchHouses();
           } else {
@@ -479,7 +566,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
               const SnackBar(content: Text('Failed to add house visit')),
             );
           }
-          
+
           Navigator.pop(context);
         },
       ),
@@ -491,13 +578,13 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
       selectedStatus = status;
       _filterMarkersByStatus();
     });
-    
+
     // Show bottom sheet with houses filtered by the selected status
     if (status.isNotEmpty && _houses != null) {
       _showFilteredHousesBottomSheet(status);
     }
   }
-  
+
   void _showFilteredHousesBottomSheet(String status) {
     showModalBottomSheet(
       context: context,
@@ -513,10 +600,10 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
       ),
     );
   }
-  
+
   void _navigateToHouse(HouseVisit house) {
     if (_mapController == null) return;
-    
+
     // Animate to the house's position
     _mapController!.animateCamera(
       CameraUpdate.newCameraPosition(
@@ -526,7 +613,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
         ),
       ),
     );
-    
+
     // After a short delay, show the house details
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
@@ -534,12 +621,12 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
       }
     });
   }
-  
+
   void _onMapTypeChanged(MapType mapType) {
     debugPrint('Changing map type to: $mapType');
     setState(() {
       _currentMapType = mapType;
-      
+
       // If changing to satellite, use hybrid for better visibility
       if (mapType == MapType.satellite) {
         _currentMapType = MapType.hybrid;
@@ -554,19 +641,46 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
       _filteredHouseMarkers = _houseMarkers.where((marker) {
         final String houseId = marker.markerId.value.replaceAll('house_', '');
         final house = _findHouseById(houseId);
-        return house != null && house.status.toLowerCase() == selectedStatus.toLowerCase();
+
+        if (house == null) return false;
+
+        // Normalize statuses for comparison
+        final normalizedHouseStatus =
+            _normalizeStatusForComparison(house.status);
+        final normalizedSelectedStatus =
+            _normalizeStatusForComparison(selectedStatus);
+
+        return normalizedHouseStatus == normalizedSelectedStatus;
       }).toSet();
-      
+
       if (_filteredHouseMarkers.isNotEmpty && _mapController != null) {
         final bounds = _calculateBounds(_filteredHouseMarkers);
-        _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50.0));
+        _mapController!
+            .animateCamera(CameraUpdate.newLatLngBounds(bounds, 50.0));
       }
     }
   }
 
+  // Helper method to normalize status strings for comparison
+  String _normalizeStatusForComparison(String status) {
+    final normalized = status.toLowerCase().trim();
+
+    // Map UI display statuses to API statuses and vice versa
+    if (normalized == 'not home') return 'nothome';
+    if (normalized == 'nothome') return 'nothome';
+    if (normalized == 'come back') return 'comeback';
+    if (normalized == 'comeback') return 'comeback';
+    if (normalized == 'partially signed') return 'partially-signed';
+    if (normalized == 'partially-signed') return 'partially-signed';
+    if (normalized == 'signed') return 'signed';
+    if (normalized == 'bas') return 'bas';
+
+    return normalized; // Return original if no match found
+  }
+
   HouseVisit? _findHouseById(String id) {
     if (_houses == null) return null;
-    
+
     for (final house in _houses!.docs) {
       if (house.id == id) {
         return house;
@@ -582,19 +696,19 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
         northeast: const LatLng(40.73, -73.98),
       );
     }
-    
+
     double? minLat, maxLat, minLng, maxLng;
-    
+
     for (final marker in markers) {
       final lat = marker.position.latitude;
       final lng = marker.position.longitude;
-      
+
       minLat = minLat == null ? lat : min(minLat, lat);
       maxLat = maxLat == null ? lat : max(maxLat, lat);
       minLng = minLng == null ? lng : min(minLng, lng);
       maxLng = maxLng == null ? lng : max(maxLng, lng);
     }
-    
+
     return LatLngBounds(
       southwest: LatLng(minLat!, minLng!),
       northeast: LatLng(maxLat!, maxLng!),
@@ -602,85 +716,71 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   }
 
   void _startLocationTracking() {
+    // Cancel any existing subscription first
     _positionStreamSubscription?.cancel();
-    
-    final LocationSettings locationSettings = const LocationSettings(
+
+    // Configure more aggressive location settings for more frequent updates
+    const LocationSettings locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 10, // Only update when moved at least 10 meters
-      timeLimit: Duration(seconds: 10),
+      distanceFilter: 5, // Update when moved at least 5 meters
+      timeLimit: Duration(seconds: 3), // Check every 3 seconds
     );
-    
-    _positionStreamSubscription = Geolocator.getPositionStream(
-      locationSettings: locationSettings
-    ).listen((Position position) {
-      _handlePositionUpdate(position);
-    }, onError: (error) {
-      debugPrint('Error from location stream: $error');
-    }, onDone: () {
-      debugPrint('Location stream completed');
-    });
-    
-    debugPrint('Started continuous location tracking');
-  }
 
-  void _handlePositionUpdate(Position position) {
-    if (!mounted) return;
-    
-    setState(() {
-      _currentPosition = position;
-      _updateMarkers();
-    });
-    
-    // Check if we should send a location update
-    if (_shouldSendLocationUpdate(position)) {
-      _sendTrackEvent(position);
-      _lastSentPosition = position;
-      _lastEmitTime = DateTime.now();
-    }
-    
-    if (_isTrackingEnabled && !_userInteractedWithMap && _mapController != null) {
-      _animateToCurrentLocation();
-    }
-  }
+    debugPrint(
+        '📍 Starting continuous location tracking with aggressive settings');
 
-  // Helper method to decide if we should send a location update
-  bool _shouldSendLocationUpdate(Position position) {
-    final now = DateTime.now();
-    
-    // Check time since last update
-    final timeCondition = _lastEmitTime == null || 
-        now.difference(_lastEmitTime).inMilliseconds >= _minEmitIntervalMs;
-    
-    // Check distance if we have a previous position
-    if (_lastSentPosition != null) {
-      final distance = Geolocator.distanceBetween(
-        _lastSentPosition!.latitude, 
-        _lastSentPosition!.longitude,
-        position.latitude, 
-        position.longitude
-      );
-      
-      // Only send if moved at least 10 meters AND enough time has passed
-      return distance >= 10 && timeCondition;
-    }
-    
-    // If no previous position, just check time
-    return timeCondition;
+    // Subscribe to position stream
+    _positionStreamSubscription =
+        Geolocator.getPositionStream(locationSettings: locationSettings).listen(
+      (Position position) {
+        if (mounted) {
+          // Always update UI with new position
+          setState(() {
+            _currentPosition = position;
+            _updateMarkers();
+          });
+
+          // Send track event for EVERY position update to ensure server knows we're active
+          _sendTrackEvent(position);
+
+          // Update tracking variables
+          _lastSentPosition = position;
+          _lastEmitTime = DateTime.now();
+
+          // Only animate map if tracking is enabled and user hasn't manually moved map
+          if (_isTrackingEnabled &&
+              !_userInteractedWithMap &&
+              _mapController != null) {
+            _animateToCurrentLocation();
+          }
+        }
+      },
+      onError: (error) {
+        debugPrint('❌ Error from location stream: $error');
+        // Try to restart location tracking on error
+        Future.delayed(const Duration(seconds: 3), _startLocationTracking);
+      },
+      onDone: () {
+        debugPrint('ℹ️ Location stream completed, restarting...');
+        // Restart tracking if it completes for any reason
+        _startLocationTracking();
+      },
+    );
+
+    debugPrint('✅ Continuous location tracking started');
   }
 
   void _sendTrackEvent(Position position) {
-    if (!_socketService.isConnected) {
-      debugPrint('❌ Socket.IO not connected, cannot send track event');
-      return;
-    }
-    
     try {
+      // Always try to send track event, regardless of perceived socket status
+      // The socket service will handle reconnection if needed
+
       // Get the profile name (you may need to adjust based on your data model)
-      final String name = "Petitioner"; // Replace with actual name if available
-      final String photo = ""; // Replace with actual photo URL if available
+      const String name = "Petitioner"; // Replace with actual name if available
+      const String photo = ""; // Replace with actual photo URL if available
       final String id = _socketService.getUserId() ?? "unknown";
-      
-      // Prepare location data
+
+      // Prepare location data with unique timestamp to prevent duplicates
       final locationData = {
         "longitude": position.longitude.toString(),
         "latitude": position.latitude.toString(),
@@ -691,15 +791,35 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
         "altitude": position.altitude.toString(),
         "speed": position.speed.toString(),
         "heading": position.heading.toString(),
-        "timestamp": position.timestamp?.millisecondsSinceEpoch.toString() ?? 
-                    DateTime.now().millisecondsSinceEpoch.toString(),
+        "timestamp": DateTime.now().millisecondsSinceEpoch.toString(),
       };
-      
-      // Send the track event
+
+      // Always try to send, the socket service will handle connection issues
       _socketService.sendTrackEvent(locationData);
-      debugPrint('📍 Sent track event: ${position.latitude}, ${position.longitude}');
+      debugPrint(
+          '📍 Sent/queued track event: ${position.latitude}, ${position.longitude}');
     } catch (e) {
-      debugPrint('🔴 Error sending track event: $e');
+      debugPrint('🔴 Error in _sendTrackEvent: $e');
+      // If there's an error, check socket connection
+      _checkSocketConnection();
+    }
+  }
+
+  void _checkSocketConnection() {
+    // Always try to ensure connection is established
+    final userId = _socketService.getUserId();
+    if (userId != null) {
+      // Don't use .then() since connect() may not return a Future
+      _socketService.connect(userId);
+
+      // Use a delay instead to allow time for connection
+      Future.delayed(const Duration(milliseconds: 500), () {
+        // Send current location after connection attempt, whether it succeeded or not
+        if (_currentPosition != null) {
+          _sendTrackEvent(_currentPosition!);
+          debugPrint('🔄 Connection check completed, sent current position');
+        }
+      });
     }
   }
 
@@ -725,20 +845,10 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     }
   }
 
-  void _checkSocketConnection() {
-    if (!_socketService.isConnected && _currentPosition != null) {
-      debugPrint('💡 Periodic check: Socket.IO not connected, attempting to reconnect...');
-      final userId = _socketService.getUserId();
-      if (userId != null) {
-        _socketService.connect(userId);
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    
+
     return Scaffold(
       body: Stack(
         children: [
@@ -751,14 +861,17 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
               initialCameraPosition: _currentPosition != null
                   ? MapService.getCameraPosition(_currentPosition!)
                   : const CameraPosition(
-                      target: LatLng(40.7128, -74.0060), // Default to NYC if no position
+                      target: LatLng(
+                          40.7128, -74.0060), // Default to NYC if no position
                       zoom: 12,
                     ),
               mapType: _currentMapType,
               myLocationEnabled: true,
-              myLocationButtonEnabled: false, // Hide the default location button
+              myLocationButtonEnabled:
+                  false, // Hide the default location button
               zoomControlsEnabled: false, // Hide the zoom +/- buttons
-              mapToolbarEnabled: false, // Hide the navigation buttons that appear after marker tap
+              mapToolbarEnabled:
+                  false, // Hide the navigation buttons that appear after marker tap
               compassEnabled: false, // Hide the compass button
               markers: {
                 ..._markers,
@@ -787,7 +900,8 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
                   const Icon(Icons.error_outline, color: Colors.red, size: 48),
                   const Text('Map failed to load',
                       style: TextStyle(color: Colors.red)),
-                  Text('Position: ${_currentPosition?.latitude}, ${_currentPosition?.longitude}',
+                  Text(
+                      'Position: ${_currentPosition?.latitude}, ${_currentPosition?.longitude}',
                       style: const TextStyle(fontSize: 12)),
                 ],
               ),
@@ -818,9 +932,9 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
             bottom: 16.h,
             right: 16.w,
             child: FloatingActionButton(
-                  heroTag: 'locate',
-                  mini: true,
-                  backgroundColor: Colors.white,
+              heroTag: 'locate',
+              mini: true,
+              backgroundColor: Colors.white,
               onPressed: () {
                 _animateToCurrentLocation();
                 setState(() {
@@ -828,7 +942,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
                   _userInteractedWithMap = false;
                 });
               },
-                  child: const Icon(Icons.my_location, color: AppColors.primary),
+              child: const Icon(Icons.my_location, color: AppColors.primary),
             ),
           ),
         ],
