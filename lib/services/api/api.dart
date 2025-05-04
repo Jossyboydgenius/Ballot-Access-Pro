@@ -32,13 +32,15 @@ class Api {
     String? customBaseUrl,
   }) async {
     try {
-      final token = await localStorageService.getStorageValue(LocalStorageKeys.accessToken);
+      final token = await localStorageService
+          .getStorageValue(LocalStorageKeys.accessToken);
       final headers = {
         'Content-Type': 'application/json',
         if (hasHeader && token != null) 'Authorization': 'Bearer $token',
       };
 
-      final fullUrl = customBaseUrl != null ? '$customBaseUrl$url' : '$_baseUrl$url';
+      final fullUrl =
+          customBaseUrl != null ? '$customBaseUrl$url' : '$_baseUrl$url';
       debugPrint('POST request to $fullUrl  ==> body: $body');
 
       if (isMultiPart) {
@@ -130,7 +132,7 @@ class Api {
       return ApiResponse.timeout();
     } on Exception catch (e) {
       debugPrint('Error: $e');
-        return ApiResponse(
+      return ApiResponse(
         data: null,
         isSuccessful: false,
         message: e.toString(),
@@ -147,7 +149,8 @@ class Api {
 
   Future<ApiResponse> getData(String url, {bool hasHeader = true}) async {
     try {
-      final token = await localStorageService.getStorageValue(LocalStorageKeys.accessToken);
+      final token = await localStorageService
+          .getStorageValue(LocalStorageKeys.accessToken);
       final headers = {
         'Content-Type': 'application/json',
         if (hasHeader && token != null) 'Authorization': 'Bearer $token',
@@ -208,6 +211,39 @@ class Api {
     }
   }
 
+  Future<ApiResponse> putData(
+    String url,
+    dynamic body, {
+    bool hasHeader = false,
+  }) async {
+    try {
+      final token = await localStorageService
+          .getStorageValue(LocalStorageKeys.accessToken);
+      final headers = {
+        'Content-Type': 'application/json',
+        if (hasHeader && token != null) 'Authorization': 'Bearer $token',
+      };
+
+      debugPrint('PUT request to $_baseUrl$url with body: $body');
+
+      final response = await http.put(
+        Uri.parse('$_baseUrl$url'),
+        body: jsonEncode(body),
+        headers: headers,
+      );
+
+      return _handleResponse(response);
+    } catch (e) {
+      debugPrint('Error in PUT request: $e');
+      return ApiResponse(
+        isSuccessful: false,
+        code: 500,
+        message: e.toString(),
+        data: null,
+      );
+    }
+  }
+
   Future<ApiResponse> _sendRequest(
     request,
     bool hasHeader, {
@@ -239,11 +275,12 @@ class Api {
     request.headers.addAll(networkHeaders);
     final response = await request.send();
 
-    return await _handleResponse(response);
+    return _handleResponse(response);
   }
 
   ApiResponse _handleResponse(http.Response response) {
-    debugPrint('Response of ${response.statusCode} from ${response.request?.url} : ${response.body}');
+    debugPrint(
+        'Response of ${response.statusCode} from ${response.request?.url} : ${response.body}');
 
     try {
       final responseBody = response.body;
@@ -302,9 +339,7 @@ Future<ApiResponse> _response(StreamedResponse response) async {
         "status": false,
         "statusCode": 401,
         "data": null,
-        "error": {
-          "statusCode": 401
-        }
+        "error": {"statusCode": 401}
       },
       isSuccessful: false,
       message: "Unauthorized access",
@@ -352,9 +387,7 @@ Future<ApiResponse> _response(StreamedResponse response) async {
             "status": false,
             "statusCode": response.statusCode,
             "data": null,
-            "error": {
-              "statusCode": response.statusCode
-            }
+            "error": {"statusCode": response.statusCode}
           },
           isSuccessful: false,
           message: responseBody,
