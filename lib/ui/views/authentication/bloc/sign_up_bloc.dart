@@ -1,11 +1,13 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ballot_access_pro/services/auth_service.dart';
+import 'package:ballot_access_pro/services/local_storage_service.dart';
 import 'package:ballot_access_pro/core/locator.dart';
 import 'sign_up_event.dart';
 import 'sign_up_state.dart';
 
 class SignUpBloc extends Bloc<SignUpEvent, SignUpState> {
   final AuthService _authService = locator<AuthService>();
+  final LocalStorageService _storageService = locator<LocalStorageService>();
 
   SignUpBloc() : super(const SignUpState()) {
     on<SignUpSubmitted>(_onSignUpSubmitted);
@@ -30,6 +32,18 @@ class SignUpBloc extends Bloc<SignUpEvent, SignUpState> {
       );
 
       if (response.status && response.data != null) {
+        if (response.data!.jwt != null) {
+          await _storageService.saveStorageValue(
+            LocalStorageKeys.accessToken,
+            response.data!.jwt!,
+          );
+        }
+
+        await _storageService.saveStorageValue(
+          LocalStorageKeys.userId,
+          response.data!.id!,
+        );
+
         emit(state.copyWith(
           status: SignUpStatus.success,
           user: response.data,
