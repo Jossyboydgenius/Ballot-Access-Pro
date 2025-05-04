@@ -1,5 +1,4 @@
 import 'package:ballot_access_pro/models/territory.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:ballot_access_pro/services/api/api.dart';
@@ -23,10 +22,11 @@ class TerritoryService {
   }
 
   static Set<Polygon> createTerritoryPolygons(List<Territory> territories) {
-    return territories.where((territory) => 
-      territory.boundary?.type == 'polygon' && 
-      territory.boundary!.paths.isNotEmpty
-    ).map((territory) {
+    return territories
+        .where((territory) =>
+            territory.boundary?.type == 'polygon' &&
+            territory.boundary!.paths.isNotEmpty)
+        .map((territory) {
       return Polygon(
         polygonId: PolygonId(territory.id),
         points: territory.boundary!.paths
@@ -40,10 +40,11 @@ class TerritoryService {
   }
 
   static Set<Polyline> createTerritoryPolylines(List<Territory> territories) {
-    return territories.where((territory) => 
-      territory.boundary?.type == 'polyline' && 
-      territory.boundary!.paths.isNotEmpty
-    ).map((territory) {
+    return territories
+        .where((territory) =>
+            territory.boundary?.type == 'polyline' &&
+            territory.boundary!.paths.isNotEmpty)
+        .map((territory) {
       return Polyline(
         polylineId: PolylineId(territory.id),
         points: territory.boundary!.paths
@@ -72,4 +73,4 @@ class TerritoryService {
       return null;
     }
   }
-} 
+}
