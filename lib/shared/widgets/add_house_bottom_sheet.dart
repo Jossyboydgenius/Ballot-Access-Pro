@@ -31,15 +31,15 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
   late String localSelectedStatus;
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _votersController = TextEditingController();
-  bool get _isFormValid => 
-      localSelectedStatus.isNotEmpty && 
+  bool get _isFormValid =>
+      localSelectedStatus.isNotEmpty &&
       selectedTerritory != null &&
       _votersController.text.isNotEmpty &&
       int.tryParse(_votersController.text) != null;
 
   Widget _buildStatusChip(String label, Color color) {
     final isSelected = localSelectedStatus == label;
-    
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -190,7 +190,8 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
               runSpacing: 8.h,
               children: [
                 _buildStatusChip('Signed', AppColors.green100),
-                _buildStatusChip('Partially Signed', AppColors.green.withOpacity(0.6)),
+                _buildStatusChip(
+                    'Partially Signed', AppColors.green.withOpacity(0.6)),
                 _buildStatusChip('Come Back', Colors.blue),
                 _buildStatusChip('Not Home', Colors.yellow),
                 _buildStatusChip('BAS', Colors.red),
@@ -221,7 +222,8 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
                   borderRadius: BorderRadius.circular(8.r),
                   borderSide: const BorderSide(color: Colors.grey),
                 ),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
               ),
             ),
             AppSpacing.v16(),
@@ -255,7 +257,7 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
             AppSpacing.v24(),
             AppButton(
               text: 'Add Pin',
-              onPressed: _isFormValid 
+              onPressed: _isFormValid
                   ? () {
                       final voters = int.tryParse(_votersController.text) ?? 0;
                       widget.onAddHouse(voters, _notesController.text);
@@ -264,7 +266,8 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
               style: AppTextStyle.semibold16.copyWith(
                 color: _isFormValid ? Colors.white : Colors.grey[400],
               ),
-              backgroundColor: _isFormValid ? AppColors.primary : Colors.grey[300],
+              backgroundColor:
+                  _isFormValid ? AppColors.primary : Colors.grey[300],
             ),
             AppSpacing.v16(),
           ],
@@ -299,4 +302,3 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
     }
   }
 }
-
