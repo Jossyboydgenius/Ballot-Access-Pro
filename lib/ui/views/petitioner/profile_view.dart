@@ -235,7 +235,7 @@ class ProfileView extends StatelessWidget {
                 child: _buildStatItem(
                   'Territory',
                   petitioner.territories.isNotEmpty
-                      ? petitioner.territories.first
+                      ? petitioner.territories.first.name
                       : 'No Territory',
                   Icons.map,
                   Colors.orange,
