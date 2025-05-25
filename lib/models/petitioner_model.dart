@@ -15,7 +15,8 @@ class PetitionerModel {
   final bool phoneVerified;
   final DateTime? lastActive;
   final Location location;
-  final List<String> territories;
+  final List<Territory> territories;
+  final Settings settings;
   final DateTime createdAt;
   final DateTime updatedAt;
   final int signatures;
@@ -41,6 +42,7 @@ class PetitionerModel {
     this.lastActive,
     required this.location,
     required this.territories,
+    required this.settings,
     required this.createdAt,
     required this.updatedAt,
     required this.signatures,
@@ -65,15 +67,20 @@ class PetitionerModel {
       type: json['type'] as String,
       emailVerified: json['emailVerified'] as bool,
       phoneVerified: json['phoneVerified'] as bool,
-      lastActive: json['lastActive'] != null ? DateTime.parse(json['lastActive']) : null,
+      lastActive: json['lastActive'] != null
+          ? DateTime.parse(json['lastActive'])
+          : null,
       location: Location.fromJson(json['location'] as Map<String, dynamic>),
-      territories: (json['territories'] as List<dynamic>).map((e) => e as String).toList(),
+      territories: (json['territories'] as List<dynamic>)
+          .map((e) => Territory.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      settings: Settings.fromJson(json['settings'] as Map<String, dynamic>),
       createdAt: DateTime.parse(json['createdAt']),
       updatedAt: DateTime.parse(json['updatedAt']),
       signatures: json['signatures'] as int,
       pendingRevisits: json['pendingRevisits'] as int,
       housevisited: json['housevisited'] as int,
-      successRate: json['successRate'] is String 
+      successRate: json['successRate'] is String
           ? double.parse(json['successRate'])
           : (json['successRate'] as num).toDouble(),
     );
@@ -92,4 +99,112 @@ class Location {
       longitude: (json['longitude'] as num).toDouble(),
     );
   }
-} 
+}
+
+class Territory {
+  final String id;
+  final String name;
+  final String description;
+  final String priority;
+  final int estimatedHouses;
+  final List<String> petitioners;
+  final Boundary boundary;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  Territory({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.priority,
+    required this.estimatedHouses,
+    required this.petitioners,
+    required this.boundary,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory Territory.fromJson(Map<String, dynamic> json) {
+    return Territory(
+      id: json['_id'] as String,
+      name: json['name'] as String,
+      description: json['description'] as String,
+      priority: json['priority'] as String,
+      estimatedHouses: json['estimatedHouses'] as int,
+      petitioners: (json['petitioners'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+      boundary: Boundary.fromJson(json['boundary'] as Map<String, dynamic>),
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: DateTime.parse(json['updatedAt']),
+    );
+  }
+
+  // Add toString method to allow Territory to be used as String
+  @override
+  String toString() {
+    return name;
+  }
+
+  // Add getter for territory ID for easier access
+  String get territoryId => id;
+}
+
+class Boundary {
+  final String type;
+  final String label;
+  final List<Path> paths;
+
+  Boundary({
+    required this.type,
+    required this.label,
+    required this.paths,
+  });
+
+  factory Boundary.fromJson(Map<String, dynamic> json) {
+    return Boundary(
+      type: json['type'] as String,
+      label: json['label'] as String,
+      paths: (json['paths'] as List<dynamic>)
+          .map((e) => Path.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+class Path {
+  final String id;
+  final double lat;
+  final double lng;
+
+  Path({
+    required this.id,
+    required this.lat,
+    required this.lng,
+  });
+
+  factory Path.fromJson(Map<String, dynamic> json) {
+    return Path(
+      id: json['_id'] as String,
+      lat: (json['lat'] as num).toDouble(),
+      lng: (json['lng'] as num).toDouble(),
+    );
+  }
+}
+
+class Settings {
+  final bool emailNotification;
+  final bool inAppNotification;
+
+  Settings({
+    required this.emailNotification,
+    required this.inAppNotification,
+  });
+
+  factory Settings.fromJson(Map<String, dynamic> json) {
+    return Settings(
+      emailNotification: json['emailNotification'] as bool,
+      inAppNotification: json['inAppNotification'] as bool,
+    );
+  }
+}
