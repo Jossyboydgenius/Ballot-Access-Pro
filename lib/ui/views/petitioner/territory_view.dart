@@ -14,7 +14,8 @@ class TerritoryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => PersonalInformationBloc()..add(const LoadPersonalInformation()),
+      create: (_) =>
+          PersonalInformationBloc()..add(const LoadPersonalInformation()),
       child: Scaffold(
         appBar: AppBar(
           title: Text(
@@ -77,12 +78,13 @@ class TerritoryView extends StatelessWidget {
                         ),
                         AppSpacing.v12(),
                         ...petitioner.territories.map((territory) => Padding(
-                          padding: EdgeInsets.only(bottom: 8.h),
-                          child: Text(
-                            territory,
-                            style: AppTextStyle.regular14,
-                          ),
-                        )),
+                              padding: EdgeInsets.only(bottom: 8.h),
+                              child: Text(
+                                territory
+                                    .id, // Extracting the id or name based on your Territory model
+                                style: AppTextStyle.regular14,
+                              ),
+                            )),
                         AppSpacing.v16(),
                         _buildStatRow(
                           'Location',
