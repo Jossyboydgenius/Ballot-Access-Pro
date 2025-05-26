@@ -134,25 +134,50 @@ class MapService {
   }) async {
     debugPrint('MapService: Adding new house visit');
     try {
-      // Get petitioner ID from local storage or other source
-      final token = await locator<LocalStorageService>()
-          .getStorageValue(LocalStorageKeys.accessToken);
+      // Get petitioner ID from local storage
+      final petitionerId = await locator<LocalStorageService>()
+          .getStorageValue(LocalStorageKeys.userId);
+
+      if (petitionerId == null) {
+        debugPrint('MapService: No petitioner ID found');
+        return false;
+      }
+
+      // Get current location for petitioner coordinates
+      Position? currentPosition;
+      try {
+        currentPosition = await getCurrentLocation();
+      } catch (e) {
+        debugPrint(
+            'MapService: Could not get current location for petitioner: $e');
+        // Still proceed with the request, but without petitioner coordinates
+      }
 
       // Convert status to the format expected by the API
       String formattedStatus = _formatStatusForApi(status);
 
+      final Map<String, dynamic> requestBody = {
+        'lat': lat.toString(),
+        'long': long.toString(),
+        'address': address,
+        'territory': territory,
+        'status': formattedStatus,
+        'registeredVoters': registeredVoters,
+        'note': note,
+        'petitioner': {
+          'id': petitionerId,
+          if (currentPosition != null) ...{
+            'lat': currentPosition.latitude,
+            'long': currentPosition.longitude,
+          }
+        },
+      };
+
+      debugPrint('MapService: Request body: $requestBody');
+
       final response = await _api.postData(
         '/house-visit/add-house',
-        {
-          'lat': lat.toString(),
-          'long': long.toString(),
-          'address': address,
-          'territory': territory,
-          'status': formattedStatus,
-          'registeredVoters': registeredVoters,
-          'petitioner': token, // Using token as petitioner ID for now
-          'note': note,
-        },
+        requestBody,
         hasHeader: true,
       );
 
