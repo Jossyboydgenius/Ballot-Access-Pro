@@ -85,6 +85,21 @@ class PetitionerModel {
           : (json['successRate'] as num).toDouble(),
     );
   }
+
+  // Add a helper method to get the currently assigned territory
+  Territory? get assignedTerritory {
+    return territories.isNotEmpty ? territories.first : null;
+  }
+
+  // Add a method to get the assigned territory ID or an empty string if none
+  String get assignedTerritoryId {
+    return territories.isNotEmpty ? territories.first.id : '';
+  }
+
+  // Add a method to get the assigned territory name or "No Territory" if none
+  String get assignedTerritoryName {
+    return territories.isNotEmpty ? territories.first.name : 'No Territory';
+  }
 }
 
 class Location {
