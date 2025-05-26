@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:ballot_access_pro/core/locator.dart';
 import 'package:ballot_access_pro/models/territory_houses.dart';
+import 'package:ballot_access_pro/services/petitioner_service.dart';
 import 'package:ballot_access_pro/shared/widgets/add_house_bottom_sheet.dart';
 import 'package:ballot_access_pro/ui/widgets/map/house_status_filter.dart';
 import 'package:ballot_access_pro/ui/widgets/map/house_legend.dart';
@@ -522,8 +523,10 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
       position.longitude,
     );
 
-    // First get the territories
+    // Get territories and petitioner's assigned territory
     final territories = await TerritoryService.getTerritories();
+    final assignedTerritoryId =
+        await PetitionerService().getAssignedTerritoryId();
 
     showModalBottomSheet(
       context: context,
@@ -532,7 +535,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
       builder: (context) => AddHouseBottomSheet(
         currentAddress: address,
         selectedStatus: selectedStatus,
-        territories: territories, // Pass the already fetched territories
+        territories: territories,
         onStatusSelected: (status) {
           setState(() => selectedStatus = status);
         },
@@ -542,12 +545,14 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
             const SnackBar(content: Text('Adding house visit...')),
           );
 
-          // Add the house visit
+          // Add the house visit using assigned territory or fallback
           final success = await MapService.addHouseVisit(
             lat: position.latitude,
             long: position.longitude,
             address: address,
-            territory: _currentTerritory ?? '67d35ef14c19c778bbe7b597',
+            territory: assignedTerritoryId.isNotEmpty
+                ? assignedTerritoryId
+                : '67d35ef14c19c778bbe7b597',
             status: selectedStatus.isEmpty ? 'BAS' : selectedStatus,
             registeredVoters: voters,
             note: notes,
