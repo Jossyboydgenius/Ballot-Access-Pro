@@ -81,4 +81,16 @@ class PetitionerService {
     final territory = await getAssignedTerritory();
     return territory?.name ?? 'No Territory';
   }
+
+  // Method to get petitioner ID from profile
+  Future<String?> getPetitionerId() async {
+    final response = await getPetitionerProfile();
+
+    if (!response.status || response.data == null) {
+      debugPrint('Failed to get petitioner ID: ${response.message}');
+      return null;
+    }
+
+    return response.data!.id;
+  }
 }
