@@ -31,11 +31,21 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
   late String localSelectedStatus;
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _votersController = TextEditingController();
+
+  // Add validation state for notes
+  bool _isNotesInvalid = false;
+
   bool get _isFormValid =>
       localSelectedStatus.isNotEmpty &&
       selectedTerritory != null &&
-      _votersController.text.isNotEmpty &&
-      int.tryParse(_votersController.text) != null;
+      _notesController.text.trim().isNotEmpty; // Make notes required
+
+  // Add validation method for notes
+  void _validateNotes() {
+    setState(() {
+      _isNotesInvalid = _notesController.text.trim().isEmpty;
+    });
+  }
 
   Widget _buildStatusChip(String label, Color color) {
     final isSelected = localSelectedStatus == label;
@@ -199,7 +209,7 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
             ),
             AppSpacing.v16(),
             Text(
-              'Registered Voters',
+              'Registered Voters (Optional)',
               style: AppTextStyle.regular14,
             ),
             AppSpacing.v8(),
@@ -208,7 +218,7 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
               keyboardType: TextInputType.number,
               style: AppTextStyle.regular14,
               decoration: InputDecoration(
-                hintText: '0',
+                hintText: '0 (Leave empty if unknown)',
                 hintStyle: AppTextStyle.regular14,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.r),
@@ -228,7 +238,7 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
             ),
             AppSpacing.v16(),
             Text(
-              'Notes',
+              'Notes *', // Add asterisk to indicate required field
               style: AppTextStyle.regular14,
             ),
             AppSpacing.v8(),
@@ -236,22 +246,33 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
               controller: _notesController,
               maxLines: 3,
               style: AppTextStyle.regular14,
+              onChanged: (value) {
+                _validateNotes();
+              },
               decoration: InputDecoration(
-                hintText: 'Any additional information about this house',
-                hintStyle: AppTextStyle.regular14,
+                hintText: 'Required: Add information about this house visit',
+                hintStyle:
+                    AppTextStyle.regular14.copyWith(color: Colors.grey[600]),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.r),
-                  borderSide: const BorderSide(color: Colors.grey),
+                  borderSide: BorderSide(
+                    color: _isNotesInvalid ? Colors.red : Colors.grey,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.r),
-                  borderSide: const BorderSide(color: Colors.grey),
+                  borderSide: BorderSide(
+                    color: _isNotesInvalid ? Colors.red : Colors.grey,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.r),
-                  borderSide: const BorderSide(color: Colors.grey),
+                  borderSide: BorderSide(
+                    color: _isNotesInvalid ? Colors.red : AppColors.primary,
+                  ),
                 ),
                 contentPadding: EdgeInsets.all(12.w),
+                errorText: _isNotesInvalid ? 'Notes are required' : null,
               ),
             ),
             AppSpacing.v24(),
@@ -259,7 +280,7 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
               text: 'Add Pin',
               onPressed: _isFormValid
                   ? () {
-                      final voters = int.tryParse(_votersController.text) ?? 0;
+                      final voters = int.tryParse(_votersController.text) ?? 1;
                       widget.onAddHouse(voters, _notesController.text);
                     }
                   : null,
@@ -282,6 +303,12 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
     _votersController.addListener(() {
       setState(() {});
     });
+
+    // Add listener for notes validation
+    _notesController.addListener(() {
+      _validateNotes();
+    });
+
     localSelectedStatus = widget.selectedStatus;
   }
 
