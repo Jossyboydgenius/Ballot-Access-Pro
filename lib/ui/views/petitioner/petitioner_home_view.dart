@@ -2,6 +2,8 @@ import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/bloc/leads_bloc.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/bloc/profile_bloc.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/bloc/profile_event.dart';
+import 'package:ballot_access_pro/ui/views/petitioner/bloc/work_bloc.dart';
+import 'package:ballot_access_pro/ui/views/petitioner/bloc/work_event.dart';
 import 'package:flutter/material.dart';
 import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/shared/utils/app_sizer.dart';
@@ -22,18 +24,21 @@ class _PetitionerHomeViewState extends State<PetitionerHomeView> {
   int _currentIndex = 0;
   late final LeadsBloc _leadsBloc;
   late final ProfileBloc _profileBloc;
+  late final WorkBloc _workBloc;
 
   @override
   void initState() {
     super.initState();
     _leadsBloc = LeadsBloc()..add(const LoadLeads());
     _profileBloc = GetIt.I<ProfileBloc>()..add(const LoadProfile());
+    _workBloc = WorkBloc()..add(const CheckWorkSession());
   }
 
   @override
   void dispose() {
     _leadsBloc.close();
     _profileBloc.close();
+    _workBloc.close();
     super.dispose();
   }
 
@@ -48,11 +53,12 @@ class _PetitionerHomeViewState extends State<PetitionerHomeView> {
   @override
   Widget build(BuildContext context) {
     AppDimension.init(context);
-    
+
     return MultiBlocProvider(
       providers: [
         BlocProvider<LeadsBloc>.value(value: _leadsBloc),
         BlocProvider<ProfileBloc>.value(value: _profileBloc),
+        BlocProvider<WorkBloc>.value(value: _workBloc),
       ],
       child: Scaffold(
         body: IndexedStack(
