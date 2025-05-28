@@ -18,8 +18,8 @@ void main() {
         ),
       ),
     );
-    
+
     // This test will pass if the GoogleMap widget renders without errors
     expect(find.byType(GoogleMap), findsOneWidget);
   });
-} 
+}
