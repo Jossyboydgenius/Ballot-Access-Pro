@@ -879,31 +879,33 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
               onStatusChanged: _onStatusChanged,
             ),
           ),
-          // Connection Status Widget - shows online/offline status
+          // House Legend - display the legend for house statuses
           Positioned(
-            top: 110.h,
-            left: 16.w,
-            child: ConnectionStatusWidget(),
-          ),
-          // Sync Controls Widget - manual sync and refresh buttons
-          Positioned(
-            top: 110.h,
-            right: 16.w,
-            child: SyncControlsWidget(
-              onRefreshRequested: _fetchHouses,
-            ),
-          ),
-          Positioned(
-            top: 170.h,
+            top: 120.h, // Below the House Status Filter
             left: 16.w,
             child: const HouseLegend(),
           ),
+          // Map Type Toggle - switch between map types
           Positioned(
-            top: 170.h,
+            top: 120.h, // Below the House Status Filter
             right: 16.w,
             child: MapTypeToggle(
               currentMapType: _currentMapType,
               onMapTypeChanged: _onMapTypeChanged,
+            ),
+          ),
+          // Connection Status Widget - shows online/offline status
+          Positioned(
+            top: 260.h, // Increased to avoid overlap with House Legend
+            left: 16.w,
+            child: const ConnectionStatusWidget(),
+          ),
+          // Sync Controls Widget - manual sync and refresh buttons
+          Positioned(
+            top: 170.h, // Reduced to be closer to Map Type Toggle
+            right: 16.w,
+            child: SyncControlsWidget(
+              onRefreshRequested: _fetchHouses,
             ),
           ),
           Positioned(
