@@ -29,13 +29,11 @@ class HouseLegend extends StatelessWidget {
           SizedBox(height: 8.h),
           _buildLegendItem('Signed', AppColors.green100),
           SizedBox(height: 2.h),
-          _buildLegendItem('Partially Signed', AppColors.green.withOpacity(0.6)),
-          SizedBox(height: 2.h),
           _buildLegendItem('Come Back', Colors.blue),
           SizedBox(height: 2.h),
           _buildLegendItem('Not Home', Colors.yellow),
           SizedBox(height: 2.h),
-          _buildLegendItem('BAS', Colors.red),
+          _buildLegendItem('Not Signed', Colors.red),
         ],
       ),
     );
@@ -61,4 +59,4 @@ class HouseLegend extends StatelessWidget {
       ],
     );
   }
-} 
+}
