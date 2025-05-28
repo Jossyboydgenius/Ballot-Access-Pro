@@ -5,6 +5,8 @@ import 'package:geocoding/geocoding.dart';
 import 'package:ballot_access_pro/models/territory_houses.dart';
 import 'package:ballot_access_pro/services/api/api.dart';
 import 'package:ballot_access_pro/core/locator.dart';
+import 'package:ballot_access_pro/services/sync_service.dart';
+import 'package:ballot_access_pro/services/database_service.dart';
 import 'package:flutter/foundation.dart';
 
 class MapService {
@@ -123,6 +125,83 @@ class MapService {
     }
   }
 
+  // Offline-first method to get houses
+  static Future<TerritoryHouses?> getHousesOfflineFirst() async {
+    final syncService = locator<SyncService>();
+
+    try {
+      // First try to get from local database
+      final localHouses = await DatabaseService.getHouses();
+
+      // If we have cached data and are offline, return local data
+      if (localHouses.isNotEmpty && !await syncService.isOnline()) {
+        debugPrint(
+            'MapService: Returning ${localHouses.length} cached houses (offline)');
+        return _convertHousesToTerritoryHouses(localHouses);
+      }
+
+      // If we're online, try to fetch fresh data
+      if (await syncService.isOnline()) {
+        try {
+          final freshHouses = await getHousesForTerritory();
+          if (freshHouses != null) {
+            // Cache the fresh data
+            await _cacheHouses(freshHouses.docs);
+            debugPrint(
+                'MapService: Fetched ${freshHouses.docs.length} fresh houses');
+            return freshHouses;
+          }
+        } catch (e) {
+          debugPrint('MapService: Failed to fetch fresh data: $e');
+          // Fall back to cached data if available
+          if (localHouses.isNotEmpty) {
+            debugPrint(
+                'MapService: Falling back to ${localHouses.length} cached houses');
+            return _convertHousesToTerritoryHouses(localHouses);
+          }
+        }
+      }
+
+      // Return cached data if available
+      if (localHouses.isNotEmpty) {
+        return _convertHousesToTerritoryHouses(localHouses);
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint('MapService: Error getting houses offline-first: $e');
+      return null;
+    }
+  }
+
+  // Helper method to convert list of houses to TerritoryHouses
+  static TerritoryHouses _convertHousesToTerritoryHouses(
+      List<HouseVisit> houses) {
+    return TerritoryHouses(
+      docs: houses,
+      totalDocs: houses.length,
+      limit: houses.length,
+      totalPages: 1,
+      page: 1,
+      pagingCounter: 1,
+      hasPrevPage: false,
+      hasNextPage: false,
+      prevPage: null,
+      nextPage: null,
+    );
+  }
+
+  // Helper method to cache houses
+  static Future<void> _cacheHouses(List<HouseVisit> houses) async {
+    try {
+      for (final house in houses) {
+        await DatabaseService.insertHouse(house);
+      }
+    } catch (e) {
+      debugPrint('MapService: Error caching houses: $e');
+    }
+  }
+
   static Future<bool> addHouseVisit({
     required double lat,
     required double long,
@@ -195,6 +274,60 @@ class MapService {
     }
   }
 
+  // Offline-first method to add house visit
+  static Future<bool> addHouseVisitOfflineFirst({
+    required double lat,
+    required double long,
+    required String address,
+    required String territory,
+    required String status,
+    required int registeredVoters,
+    required String note,
+  }) async {
+    final syncService = locator<SyncService>();
+
+    try {
+      // Check if we're online
+      if (await syncService.isOnline()) {
+        // Try to add online first
+        final success = await addHouseVisit(
+          lat: lat,
+          long: long,
+          address: address,
+          territory: territory,
+          status: status,
+          registeredVoters: registeredVoters,
+          note: note,
+        );
+
+        if (success) {
+          return true;
+        }
+      }
+
+      // Add offline if online failed or we're offline
+      final houseData = {
+        'latitude': lat,
+        'longitude': long,
+        'address': address,
+        'territory': territory,
+        'status': status,
+        'registered_voters': registeredVoters,
+        'notes': note,
+        'petitioner_id': await locator<LocalStorageService>()
+                .getStorageValue(LocalStorageKeys.userId) ??
+            'unknown',
+      };
+
+      await syncService.addHouseOffline(houseData);
+      debugPrint('MapService: Added house visit offline');
+      return true;
+    } catch (e) {
+      debugPrint('MapService: Error adding house visit offline-first: $e');
+      return false;
+    }
+  }
+
   static Future<bool> updateHouseStatus({
     required String markerId,
     required String status,
@@ -249,71 +382,111 @@ class MapService {
     }
   }
 
-  // Helper method to convert UI status to API status format
-  static String _formatStatusForApi(String status) {
-    switch (status.toLowerCase()) {
-      case 'signed':
-        return 'signed';
-      case 'partially signed':
-        return 'partially-signed';
-      case 'come back':
-        return 'comeback';
-      case 'not home':
-        return 'notHome';
-      case 'bas':
-        return 'bas';
-      default:
-        return 'bas'; // Default to BAS if unknown
+  // Offline-first method to update house status
+  static Future<bool> updateHouseStatusOfflineFirst({
+    required String markerId,
+    required String status,
+    Map<String, String>? lead,
+  }) async {
+    final syncService = locator<SyncService>();
+
+    try {
+      // Check if we're online
+      if (await syncService.isOnline()) {
+        // Try to update online first
+        final success = await updateHouseStatus(
+          markerId: markerId,
+          status: status,
+          lead: lead,
+        );
+
+        if (success) {
+          return true;
+        }
+      }
+
+      // Update offline if online failed or we're offline
+      final updateData = {
+        'status': status,
+        'lead_data': lead,
+      };
+
+      await syncService.updateHouseOffline(markerId, updateData);
+      debugPrint('MapService: Updated house status offline');
+      return true;
+    } catch (e) {
+      debugPrint('MapService: Error updating house status offline-first: $e');
+      return false;
     }
   }
 
-  // Helper to ensure status matches API's expected format
-  static String _normalizeStatusForAPI(String status) {
-    final lowerStatus = status.toLowerCase();
-
-    // Match exactly what the API expects
-    if (lowerStatus == 'signed') return 'signed';
-    if (lowerStatus == 'partially-signed' || lowerStatus == 'partially signed')
-      return 'partially-signed';
-    if (lowerStatus == 'comeback' || lowerStatus == 'come back')
-      return 'comeback';
-    if (lowerStatus == 'nothome' || lowerStatus == 'not home')
-      return 'notHome'; // Important: camelCase for notHome
-    if (lowerStatus == 'bas') return 'bas';
-
-    // Default
-    return 'bas';
-  }
-
-  // Validate email format
-  static bool _isValidEmail(String email) {
-    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-    return emailRegex.hasMatch(email);
-  }
-
+  // Helper method to get marker icon for status
   static BitmapDescriptor getMarkerIconForStatus(String status) {
     switch (status.toLowerCase()) {
       case 'signed':
-        return BitmapDescriptor.defaultMarkerWithHue(
-            90.0); // Deep green for signed
-      case 'partially signed':
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
       case 'partially-signed':
         return BitmapDescriptor.defaultMarkerWithHue(
-            160.0); // Cyan/teal color for partially signed (distinct from green)
+            BitmapDescriptor.hueYellow);
       case 'comeback':
-      case 'come back':
-        return BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueBlue); // Blue for come back
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
       case 'nothome':
       case 'not home':
         return BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueYellow); // Yellow for not home
+            BitmapDescriptor.hueOrange);
       case 'bas':
-        return BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueRed); // Red for BAS
+        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
       default:
-        return BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueViolet); // Violet for unknown status
+        return BitmapDescriptor.defaultMarker;
     }
+  }
+
+  // Helper method to format status for API
+  static String _formatStatusForApi(String status) {
+    final normalized = status.toLowerCase().trim();
+
+    switch (normalized) {
+      case 'not home':
+        return 'notHome';
+      case 'come back':
+        return 'comeback';
+      case 'partially signed':
+        return 'partially-signed';
+      case 'signed':
+        return 'signed';
+      case 'bas':
+        return 'bas';
+      default:
+        return normalized;
+    }
+  }
+
+  // Helper method to normalize status for API
+  static String _normalizeStatusForAPI(String status) {
+    final normalized = status.toLowerCase().trim();
+
+    switch (normalized) {
+      case 'not home':
+      case 'nothome':
+        return 'notHome';
+      case 'come back':
+      case 'comeback':
+        return 'comeback';
+      case 'partially signed':
+      case 'partially-signed':
+        return 'partially-signed';
+      case 'signed':
+        return 'signed';
+      case 'bas':
+        return 'bas';
+      default:
+        return normalized;
+    }
+  }
+
+  // Helper method to validate email
+  static bool _isValidEmail(String email) {
+    final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+    return emailRegex.hasMatch(email);
   }
 }
