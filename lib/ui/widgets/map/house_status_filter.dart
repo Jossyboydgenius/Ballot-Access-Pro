@@ -18,14 +18,12 @@ class HouseStatusFilter extends StatelessWidget {
     switch (displayStatus.toLowerCase()) {
       case 'signed':
         return 'signed';
-      case 'partially signed':
-        return 'partially-signed';
       case 'come back':
         return 'comeback';
       case 'not home':
         return 'nothome';
-      case 'bas':
-        return 'bas';
+      case 'not signed':
+        return 'not-signed';
       default:
         return displayStatus.toLowerCase();
     }
@@ -52,14 +50,11 @@ class HouseStatusFilter extends StatelessWidget {
           children: [
             _buildStatusChip('Signed', AppColors.green100),
             SizedBox(width: 8.w),
-            _buildStatusChip(
-                'Partially Signed', AppColors.green.withOpacity(0.6)),
-            SizedBox(width: 8.w),
             _buildStatusChip('Come Back', Colors.blue),
             SizedBox(width: 8.w),
             _buildStatusChip('Not Home', Colors.yellow),
             SizedBox(width: 8.w),
-            _buildStatusChip('BAS', Colors.red),
+            _buildStatusChip('Not Signed', Colors.red),
           ],
         ),
       ),
