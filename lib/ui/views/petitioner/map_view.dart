@@ -10,6 +10,8 @@ import 'package:ballot_access_pro/ui/widgets/map/map_type_toggle.dart';
 import 'package:ballot_access_pro/ui/widgets/map/house_details_bottom_sheet.dart';
 import 'package:ballot_access_pro/ui/widgets/map/filtered_houses_bottom_sheet.dart';
 import 'package:ballot_access_pro/ui/widgets/map/update_house_status_bottom_sheet.dart';
+import 'package:ballot_access_pro/ui/widgets/map/connection_status_widget.dart';
+import 'package:ballot_access_pro/ui/widgets/map/sync_controls_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -43,9 +45,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   MapType _currentMapType = MapType.normal;
   late SocketService _socketService;
   final Map<String, UserLocation> _userLocations = {};
-  bool _socketConnected = false;
   Set<Marker> _houseMarkers = {};
-  String? _currentTerritory;
   Set<Polygon> _territoryPolygons = {};
   Set<Polyline> _territoryPolylines = {};
   Set<Marker> _filteredHouseMarkers = {};
@@ -53,10 +53,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   StreamSubscription<Position>? _positionStreamSubscription;
   bool _isTrackingEnabled = true;
   bool _userInteractedWithMap = false;
-  DateTime _lastEmitTime = DateTime.now();
-  final int _minEmitIntervalMs = 5000;
   bool _animatingToCurrentLocation = false;
-  Position? _lastSentPosition;
   Timer? _socketCheckTimer;
 
   @override
@@ -150,10 +147,6 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
       // Listen for connection status changes
       _socketService.connectionStatus.listen((isConnected) {
         if (mounted) {
-          setState(() {
-            _socketConnected = isConnected;
-          });
-
           // Send location update when reconnected
           if (isConnected && _currentPosition != null) {
             _sendTrackEvent(_currentPosition!);
@@ -194,10 +187,6 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
       });
 
       _updateMarkers();
-
-      // Store the current position as last sent regardless of socket status
-      _lastSentPosition = position;
-      _lastEmitTime = DateTime.now();
 
       // Send location immediately upon obtaining it, even if socket appears disconnected
       _sendTrackEvent(position);
@@ -317,15 +306,10 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     });
   }
 
-  Future<void> _fetchPetitionersAndVoters() async {
-    // TODO: Implement API call to fetch petitioners and voters locations
-    // This should update _petitionerMarkers and _voterMarkers
-  }
-
   Future<void> _fetchHouses() async {
-    debugPrint('Fetching house visits');
+    debugPrint('Fetching house visits using offline-first approach');
     try {
-      final houses = await MapService.getHousesForTerritory();
+      final houses = await MapService.getHousesOfflineFirst();
       if (!mounted) return;
 
       if (houses != null) {
@@ -426,27 +410,6 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     }
   }
 
-  BitmapDescriptor _getMarkerIconForStatus(String status) {
-    switch (status.toLowerCase()) {
-      case 'signed':
-        // Deeper green for signed
-        return BitmapDescriptor.defaultMarkerWithHue(90.0);
-      case 'partially signed':
-        // Cyan/teal color for partially signed (distinct from green)
-        return BitmapDescriptor.defaultMarkerWithHue(160.0);
-      case 'come back':
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
-      case 'not home':
-        return BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueYellow);
-      case 'bas':
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
-      default:
-        return BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueViolet);
-    }
-  }
-
   void _showHouseDetails(HouseVisit house) {
     showModalBottomSheet(
       context: context,
@@ -486,8 +449,8 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
               );
             }
 
-            // Call the API to update the status
-            final success = await MapService.updateHouseStatus(
+            // Call the offline-first API to update the status
+            final success = await MapService.updateHouseStatusOfflineFirst(
               markerId: house.id,
               status: status,
               lead: leadData,
@@ -545,8 +508,8 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
             const SnackBar(content: Text('Adding house visit...')),
           );
 
-          // Add the house visit using assigned territory or fallback
-          final success = await MapService.addHouseVisit(
+          // Add the house visit using offline-first approach
+          final success = await MapService.addHouseVisitOfflineFirst(
             lat: position.latitude,
             long: position.longitude,
             address: address,
@@ -748,10 +711,6 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
           // Send track event for EVERY position update to ensure server knows we're active
           _sendTrackEvent(position);
 
-          // Update tracking variables
-          _lastSentPosition = position;
-          _lastEmitTime = DateTime.now();
-
           // Only animate map if tracking is enabled and user hasn't manually moved map
           if (_isTrackingEnabled &&
               !_userInteractedWithMap &&
@@ -920,13 +879,27 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
               onStatusChanged: _onStatusChanged,
             ),
           ),
+          // Connection Status Widget - shows online/offline status
           Positioned(
-            top: 120.h,
+            top: 110.h,
+            left: 16.w,
+            child: ConnectionStatusWidget(),
+          ),
+          // Sync Controls Widget - manual sync and refresh buttons
+          Positioned(
+            top: 110.h,
+            right: 16.w,
+            child: SyncControlsWidget(
+              onRefreshRequested: _fetchHouses,
+            ),
+          ),
+          Positioned(
+            top: 170.h,
             left: 16.w,
             child: const HouseLegend(),
           ),
           Positioned(
-            top: 120.h,
+            top: 170.h,
             right: 16.w,
             child: MapTypeToggle(
               currentMapType: _currentMapType,
