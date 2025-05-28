@@ -12,6 +12,7 @@ import 'package:ballot_access_pro/ui/widgets/map/filtered_houses_bottom_sheet.da
 import 'package:ballot_access_pro/ui/widgets/map/update_house_status_bottom_sheet.dart';
 import 'package:ballot_access_pro/ui/widgets/map/connection_status_widget.dart';
 import 'package:ballot_access_pro/ui/widgets/map/sync_controls_widget.dart';
+import 'package:ballot_access_pro/ui/widgets/map/work_controls_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -896,16 +897,30 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
           ),
           // Connection Status Widget - shows online/offline status
           Positioned(
-            top: 260.h, // Increased to avoid overlap with House Legend
-            left: 16.w,
+            top: 230.h, // Shifted up from 260.h
+            right: 110.w, // Moved to the right from left: 16.w
             child: const ConnectionStatusWidget(),
           ),
           // Sync Controls Widget - manual sync and refresh buttons
           Positioned(
-            top: 170.h, // Reduced to be closer to Map Type Toggle
+            top: 170.h, // Shifted up from 190.h
             right: 16.w,
             child: SyncControlsWidget(
               onRefreshRequested: _fetchHouses,
+            ),
+          ),
+          // Work Controls Widget - start/stop work session and location button row
+          Positioned(
+            bottom:
+                16.h, // Moved from 100.h to 16.h to align with location button
+            left: 16.w,
+            right: 70
+                .w, // Added right constraint to ensure it doesn't overlap with location button
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const WorkControlsWidget(),
+              ],
             ),
           ),
           Positioned(
