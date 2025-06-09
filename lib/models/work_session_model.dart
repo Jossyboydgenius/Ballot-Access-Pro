@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 class WorkSessionResponse {
   final List<WorkSession> docs;
   final int totalDocs;
