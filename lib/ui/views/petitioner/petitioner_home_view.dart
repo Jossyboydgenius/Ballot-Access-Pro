@@ -10,6 +10,7 @@ import 'package:ballot_access_pro/shared/utils/app_sizer.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/map_view.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/leads_view.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/profile_view.dart';
+import 'package:ballot_access_pro/ui/views/petitioner/recordings_view.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 
@@ -47,6 +48,7 @@ class _PetitionerHomeViewState extends State<PetitionerHomeView> {
   final List<Widget> _screens = [
     const MapView(),
     const LeadsView(),
+    const RecordingsView(),
     const ProfileView(),
   ];
 
@@ -85,6 +87,10 @@ class _PetitionerHomeViewState extends State<PetitionerHomeView> {
             BottomNavigationBarItem(
               icon: Icon(Icons.people),
               label: 'Leads',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.mic),
+              label: 'Recordings',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person),
