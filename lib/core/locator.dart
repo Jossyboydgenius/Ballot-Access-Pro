@@ -9,6 +9,7 @@ import '../services/database_service.dart';
 import '../services/sync_service.dart';
 import '../services/work_service.dart';
 import '../services/audio_service.dart';
+import '../services/fcm_service.dart';
 import '../ui/views/petitioner/bloc/profile_bloc.dart';
 import '../ui/views/petitioner/bloc/personal_information_bloc.dart';
 
@@ -35,6 +36,7 @@ void _registerServices() {
   locator.registerLazySingleton<SyncService>(() => SyncService());
   locator.registerLazySingleton<WorkService>(() => WorkService());
   locator.registerLazySingleton<AudioService>(() => AudioService());
+  locator.registerLazySingleton<FCMService>(() => FCMService());
 }
 
 Future<void> _registerExternalDependencies(AppFlavorConfig config) async {
@@ -52,4 +54,6 @@ Future<void> _setUpServices() async {
   syncService.initialize(); // This method returns void, not Future
 }
 
-Future<void> _registerRepositories() async {}
+Future<void> _registerRepositories() async {
+  // Register repositories if needed
+}
