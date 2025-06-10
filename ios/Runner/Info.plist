@@ -56,6 +56,11 @@
 	<key>io.flutter.embedded_views_preview</key>
 	<true/>
 	<key>GoogleMapsApiKey</key>
-	<string>AIzaSyB_QYzkb3OOa0t4_K6m7c8pge86e_111mM</string>
+	<string>${GOOGLE_MAPS_API_KEY}</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>http</string>
+		<string>https</string>
+	</array>
 </dict>
 </plist>
