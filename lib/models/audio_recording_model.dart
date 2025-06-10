@@ -50,11 +50,13 @@ class AudioRecording {
   });
 
   factory AudioRecording.fromJson(Map<String, dynamic> json) {
+    // Use the URL directly as provided by the API without any modifications
+    // Google Cloud Storage URLs are already properly encoded
     return AudioRecording(
       id: json['_id'],
       userId: json['userId'],
       filename: json['filename'],
-      url: json['url'],
+      url: json['url'] ?? '',
       duration: json['duration'] ?? 0,
       size: json['size'] ?? 0,
       contentType: json['contentType'],
