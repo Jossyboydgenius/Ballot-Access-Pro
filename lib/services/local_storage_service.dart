@@ -14,6 +14,7 @@ enum LocalStorageKeys {
   showedOnboarding,
   timedOut,
   useBiometric,
+  fcmToken,
 }
 
 class LocalStorageService {
