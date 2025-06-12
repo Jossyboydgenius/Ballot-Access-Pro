@@ -164,6 +164,8 @@ class BottomSheetController {
         showModalBottomSheet(
           context: context,
           isScrollControlled: true,
+          isDismissible: true,
+          enableDrag: true,
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
