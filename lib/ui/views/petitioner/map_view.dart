@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:ballot_access_pro/core/locator.dart';
 import 'package:ballot_access_pro/models/territory_houses.dart';
 import 'package:ballot_access_pro/services/petitioner_service.dart';
+import 'package:ballot_access_pro/shared/utils/debug_utils.dart';
 import 'package:ballot_access_pro/shared/widgets/add_house_bottom_sheet.dart';
 import 'package:ballot_access_pro/ui/widgets/map/house_status_filter.dart';
 import 'package:ballot_access_pro/ui/widgets/map/house_legend.dart';
@@ -65,6 +66,11 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
   void initState() {
     super.initState();
     _initializeMap();
+
+    // Initialize debug mode with a delay
+    if (DebugUtils.isDebugMode) {
+      Future.delayed(const Duration(seconds: 2), _initializeDebugMode);
+    }
 
     // Start a timer to check connection status periodically
     Timer.periodic(const Duration(seconds: 30), (timer) {
@@ -179,7 +185,28 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
 
   Future<void> _initializeLocation() async {
     try {
-      final position = await MapService.getCurrentLocation();
+      Position position;
+
+      // In debug mode, use fixed coordinates to prevent issues
+      if (DebugUtils.isDebugMode) {
+        // Use a valid fixed position for debugging (Ghana coordinates)
+        position = Position(
+          longitude: -0.1870,
+          latitude: 5.6037,
+          timestamp: DateTime.now(),
+          accuracy: 0,
+          altitude: 0,
+          heading: 0,
+          speed: 0,
+          speedAccuracy: 0,
+          altitudeAccuracy: 0,
+          headingAccuracy: 0,
+        );
+        debugPrint(
+            'Using fixed position for debug mode: ${position.latitude}, ${position.longitude}');
+      } else {
+        position = await MapService.getCurrentLocation();
+      }
 
       if (!mounted) return;
 
@@ -247,7 +274,10 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     if (_mapCreated) return;
 
     _mapController = controller;
-    _mapCreated = true;
+    setState(() {
+      _mapCreated = true;
+      _isLoading = false;
+    });
 
     try {
       // First try loading map style from file
@@ -289,6 +319,15 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
           'Animated to current position: ${_currentPosition!.latitude}, ${_currentPosition!.longitude}');
     } else {
       debugPrint('No current position available for initial camera animation');
+    }
+
+    // Force an additional rebuild to ensure all UI elements are shown
+    if (mounted) {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted) {
+          setState(() {});
+        }
+      });
     }
   }
 
@@ -366,6 +405,11 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
 
       debugPrint('Successfully fetched ${territories.length} territories');
 
+      // Get the petitioner's assigned territory ID
+      final assignedTerritoryId =
+          await PetitionerService().getAssignedTerritoryId();
+      debugPrint('Assigned territory ID: $assignedTerritoryId');
+
       if (mounted) {
         setState(() {
           // Create polygons for areas with a closed shape (polygon type)
@@ -375,14 +419,23 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
                   territory.boundary!.paths.isNotEmpty)
               .map((territory) {
             debugPrint('Creating polygon for territory: ${territory.name}');
+
+            // Highlight the assigned territory with a different color
+            final bool isAssigned = territory.id == assignedTerritoryId;
+            final Color strokeColor = isAssigned ? Colors.green : Colors.red;
+            final Color fillColor = isAssigned
+                ? Colors.green.withOpacity(0.4)
+                : Colors.red.withOpacity(0.2);
+
             return Polygon(
               polygonId: PolygonId(territory.id),
               points: territory.boundary!.paths
                   .map((point) => LatLng(point.lat, point.lng))
                   .toList(),
-              strokeWidth: 2,
-              strokeColor: Colors.red,
-              fillColor: Colors.red.withOpacity(0.3),
+              strokeWidth:
+                  isAssigned ? 3 : 2, // Make assigned territory border thicker
+              strokeColor: strokeColor,
+              fillColor: fillColor,
             );
           }).toSet();
 
@@ -393,13 +446,18 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
                   territory.boundary!.paths.isNotEmpty)
               .map((territory) {
             debugPrint('Creating polyline for territory: ${territory.name}');
+
+            // Highlight the assigned territory with a different color
+            final bool isAssigned = territory.id == assignedTerritoryId;
+            final Color lineColor = isAssigned ? Colors.green : Colors.red;
+
             return Polyline(
               polylineId: PolylineId(territory.id),
               points: territory.boundary!.paths
                   .map((point) => LatLng(point.lat, point.lng))
                   .toList(),
-              width: 3,
-              color: Colors.red,
+              width: isAssigned ? 4 : 3, // Make assigned territory line thicker
+              color: lineColor,
             );
           }).toSet();
 
@@ -504,7 +562,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
         onStatusSelected: (status) {
           setState(() => selectedStatus = status);
         },
-        onAddHouse: (voters, notes) async {
+        onAddHouse: (voters, notes, editedAddress) async {
           // Show loading indicator
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Adding house visit...')),
@@ -514,7 +572,7 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
           final success = await MapService.addHouseVisitOfflineFirst(
             lat: position.latitude,
             long: position.longitude,
-            address: address,
+            address: editedAddress,
             territory: assignedTerritoryId.isNotEmpty
                 ? assignedTerritoryId
                 : '67d35ef14c19c778bbe7b597',
@@ -689,6 +747,62 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     // Cancel any existing subscription first
     _positionStreamSubscription?.cancel();
 
+    // Skip real GPS tracking in debug mode to prevent issues
+    if (DebugUtils.isDebugMode) {
+      debugPrint('📍 Using simulated location updates in debug mode');
+
+      // Create a timer that simulates position updates every 5 seconds
+      _positionStreamSubscription = Stream.periodic(
+        const Duration(seconds: 5),
+        (count) {
+          // Simulate small position changes
+          final randomLat = (0.0001 * (count % 10)) * (count % 2 == 0 ? 1 : -1);
+          final randomLng =
+              (0.0001 * ((count + 3) % 10)) * (count % 2 == 0 ? -1 : 1);
+
+          return Position(
+            longitude: -0.1870 + randomLng,
+            latitude: 5.6037 + randomLat,
+            timestamp: DateTime.now(),
+            accuracy: 0,
+            altitude: 0,
+            heading: 0,
+            speed: 0,
+            speedAccuracy: 0,
+            altitudeAccuracy: 0,
+            headingAccuracy: 0,
+          );
+        },
+      ).listen(
+        (Position position) {
+          if (mounted) {
+            // Always update UI with new position
+            setState(() {
+              _currentPosition = position;
+              _updateMarkers();
+            });
+
+            // Send track event for simulated position updates
+            _sendTrackEvent(position);
+
+            // Only animate map if tracking is enabled and user hasn't manually moved map
+            if (_isTrackingEnabled &&
+                !_userInteractedWithMap &&
+                _mapController != null) {
+              _animateToCurrentLocation();
+            }
+          }
+        },
+        onError: (error) {
+          debugPrint('❌ Error from simulated location stream: $error');
+        },
+      );
+
+      debugPrint('✅ Simulated location tracking started for debug mode');
+      return;
+    }
+
+    // For release mode, use actual GPS tracking
     // Configure more aggressive location settings for more frequent updates
     const LocationSettings locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
@@ -811,9 +925,72 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     }
   }
 
+  // Special method to force initialization in debug mode
+  void _initializeDebugMode() {
+    if (!DebugUtils.isDebugMode) return;
+
+    debugPrint('Forcing map initialization in debug mode');
+
+    // Set default position if none exists
+    if (_currentPosition == null) {
+      _currentPosition = Position(
+        longitude: -0.1870,
+        latitude: 5.6037,
+        timestamp: DateTime.now(),
+        accuracy: 0,
+        altitude: 0,
+        heading: 0,
+        speed: 0,
+        speedAccuracy: 0,
+        altitudeAccuracy: 0,
+        headingAccuracy: 0,
+      );
+    }
+
+    // Mark loading as complete
+    setState(() {
+      _isLoading = false;
+      _mapCreated = true;
+    });
+
+    // Force UI refresh on a delay
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
+
+    // Special handling for debug mode
+    if (DebugUtils.isDebugMode && !_mapCreated) {
+      // Force initialization complete after a timeout in debug mode
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted && !_mapCreated) {
+          setState(() {
+            _mapCreated = true;
+            _isLoading = false;
+            if (_currentPosition == null) {
+              _currentPosition = Position(
+                longitude: -0.1870,
+                latitude: 5.6037,
+                timestamp: DateTime.now(),
+                accuracy: 0,
+                altitude: 0,
+                heading: 0,
+                speed: 0,
+                speedAccuracy: 0,
+                altitudeAccuracy: 0,
+                headingAccuracy: 0,
+              );
+            }
+          });
+        }
+      });
+    }
 
     return Scaffold(
       body: Stack(
