@@ -70,7 +70,7 @@ Future<void> main() async {
     // Initialize Firebase with the correct options from google-services.json
     try {
       // Define Firebase options based on the google-services.json file
-      final FirebaseOptions firebaseOptions = FirebaseOptions(
+      const FirebaseOptions firebaseOptions = FirebaseOptions(
         apiKey: 'AIzaSyBUCPniH8iVLXSC4oLXKImSYnBe3dr0zHg',
         appId: '1:275057923056:android:7e3d42d9ba946b33594335',
         messagingSenderId: '275057923056',
@@ -181,7 +181,7 @@ class _MainAppState extends State<MainApp> {
       builder: (context, snapshot) {
         // Return loading indicator while initializing
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return MaterialApp(
+          return const MaterialApp(
             home: Scaffold(body: Center(child: CircularProgressIndicator())),
           );
         }
