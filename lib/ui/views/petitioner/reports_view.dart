@@ -212,7 +212,7 @@ class _ReportsViewState extends State<ReportsView> {
           SizedBox(height: 12.h),
           _buildStatusRow('Not Home', 20, Colors.blue),
           SizedBox(height: 12.h),
-          _buildStatusRow('BAS', 10, Colors.red),
+          _buildStatusRow('Not Signed', 10, Colors.red),
         ],
       ),
     );
