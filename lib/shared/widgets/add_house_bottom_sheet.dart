@@ -361,6 +361,9 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
               onPressed: _isFormValid
                   ? () {
                       final voters = int.tryParse(_votersController.text) ?? 1;
+                      // Close bottom sheet first
+                      Navigator.pop(context);
+                      // Then call onAddHouse
                       widget.onAddHouse(
                         voters,
                         _notesController.text,
