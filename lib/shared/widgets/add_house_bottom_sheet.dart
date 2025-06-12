@@ -308,6 +308,53 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
                 errorText: _isNotesInvalid ? 'Invalid notes format' : null,
               ),
             ),
+            AppSpacing.v16(),
+            Text(
+              'Territory',
+              style: AppTextStyle.regular14,
+            ),
+            AppSpacing.v8(),
+            _isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(),
+                  )
+                : Container(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.map, color: AppColors.primary),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: Text(
+                            widget.territories
+                                .firstWhere(
+                                  (t) => t.id == selectedTerritory,
+                                  orElse: () => Territory(
+                                    id: '',
+                                    name: 'Unknown Territory',
+                                    description: '',
+                                    priority: 'low',
+                                    estimatedHouses: 0,
+                                    petitioners: [],
+                                    status: 'inactive',
+                                    progress: 0,
+                                    totalHousesSigned: 0,
+                                    totalHousesVisited: 0,
+                                  ),
+                                )
+                                .name,
+                            style: AppTextStyle.regular14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+            AppSpacing.v16(),
             AppSpacing.v24(),
             AppButton(
               text: 'Add Pin',
