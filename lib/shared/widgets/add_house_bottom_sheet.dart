@@ -339,6 +339,7 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
     _addressController.text = widget.currentAddress;
     _addressController.addListener(() {
       _validateAddress();
+      setState(() {}); // Ensure UI updates when address is edited
     });
 
     localSelectedStatus = widget.selectedStatus;
