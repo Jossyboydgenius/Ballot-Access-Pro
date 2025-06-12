@@ -62,42 +62,80 @@ class _PetitionerHomeViewState extends State<PetitionerHomeView> {
         BlocProvider<ProfileBloc>.value(value: _profileBloc),
         BlocProvider<WorkBloc>.value(value: _workBloc),
       ],
-      child: Scaffold(
-        body: IndexedStack(
-          index: _currentIndex,
-          children: _screens,
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
+      child: WillPopScope(
+        onWillPop: () async {
+          // If on the map view, show confirmation dialog
+          if (_currentIndex == 0) {
+            return await _showExitConfirmationDialog(context) ?? false;
+          }
+
+          // If on other views, go back to map view
+          if (_currentIndex != 0) {
             setState(() {
-              _currentIndex = index;
+              _currentIndex = 0;
             });
-          },
-          selectedItemColor: AppColors.primary,
-          unselectedItemColor: Colors.grey,
-          type: BottomNavigationBarType.fixed,
-          selectedLabelStyle: AppTextStyle.bold14,
-          unselectedLabelStyle: AppTextStyle.regular12,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.map),
-              label: 'Map',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.people),
-              label: 'Leads',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.mic),
-              label: 'Recordings',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person),
-              label: 'Profile',
-            ),
-          ],
+            return false;
+          }
+
+          return true;
+        },
+        child: Scaffold(
+          body: IndexedStack(
+            index: _currentIndex,
+            children: _screens,
+          ),
+          bottomNavigationBar: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+            selectedItemColor: AppColors.primary,
+            unselectedItemColor: Colors.grey,
+            type: BottomNavigationBarType.fixed,
+            selectedLabelStyle: AppTextStyle.bold14,
+            unselectedLabelStyle: AppTextStyle.regular12,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.map),
+                label: 'Map',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.people),
+                label: 'Leads',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.mic),
+                label: 'Recordings',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+            ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Future<bool?> _showExitConfirmationDialog(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Exit App'),
+        content: const Text('Are you sure you want to exit the app?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Exit', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }
