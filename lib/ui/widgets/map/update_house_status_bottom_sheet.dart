@@ -41,10 +41,9 @@ class _UpdateHouseStatusBottomSheetState
   // API requires specific status values
   final Map<String, String> statusMappings = {
     'signed': 'signed',
-    'partially-signed': 'partially-signed',
     'comeback': 'comeback',
     'nothome': 'notHome',
-    'bas': 'bas',
+    'not-signed': 'not-signed',
   };
 
   @override
@@ -81,13 +80,10 @@ class _UpdateHouseStatusBottomSheetState
       return 'notHome';
     } else if (normalized == 'come back' || normalized == 'comeback') {
       return 'comeback';
-    } else if (normalized == 'partially signed' ||
-        normalized == 'partially-signed') {
-      return 'partially-signed';
+    } else if (normalized == 'not signed' || normalized == 'not-signed') {
+      return 'not-signed';
     } else if (normalized == 'signed') {
       return 'signed';
-    } else if (normalized == 'bas') {
-      return 'bas';
     }
 
     // Default return original if no match
@@ -97,7 +93,7 @@ class _UpdateHouseStatusBottomSheetState
   // Create display-friendly status format
   String _getDisplayStatusFormat(String apiStatus) {
     if (apiStatus == 'notHome') return 'Not Home';
-    if (apiStatus == 'partially-signed') return 'Partially Signed';
+    if (apiStatus == 'not-signed') return 'Not Signed';
     if (apiStatus == 'comeback') return 'Come Back';
     return apiStatus.substring(0, 1).toUpperCase() +
         apiStatus.substring(1); // Capitalize first letter
@@ -260,11 +256,9 @@ class _UpdateHouseStatusBottomSheetState
               runSpacing: 8.h,
               children: [
                 _buildStatusChip('signed', 'Signed', AppColors.green100),
-                _buildStatusChip('partially-signed', 'Partially Signed',
-                    AppColors.green.withOpacity(0.6)),
                 _buildStatusChip('comeback', 'Come Back', Colors.blue),
                 _buildStatusChip('notHome', 'Not Home', Colors.yellow),
-                _buildStatusChip('bas', 'BAS', Colors.red),
+                _buildStatusChip('not-signed', 'Not Signed', Colors.red),
               ],
             ),
 
