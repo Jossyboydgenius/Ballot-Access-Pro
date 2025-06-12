@@ -53,14 +53,25 @@
 	<string>This app needs access to location when open and in the background to update your location on the map.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app needs access to the microphone to record conversations for later reference.</string>
+	<key>NSUserNotificationUsageDescription</key>
+	<string>We need to send you notifications about important updates and alerts.</string>
 	<key>io.flutter.embedded_views_preview</key>
 	<true/>
 	<key>GoogleMapsApiKey</key>
-	<string>${GOOGLE_MAPS_API_KEY}</string>
+	<string>AIzaSyB_QYzkb3OOa0t4_K6m7c8pge86e_111mM</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>http</string>
 		<string>https</string>
+	</array>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<true/>
+	<key>FirebaseMessagingAutoInitEnabled</key>
+	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
 	</array>
 </dict>
 </plist>
