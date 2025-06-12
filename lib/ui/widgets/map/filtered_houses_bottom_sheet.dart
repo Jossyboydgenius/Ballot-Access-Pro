@@ -21,16 +21,14 @@ class FilteredHousesBottomSheet extends StatelessWidget {
     switch (_normalizeStatusForComparison(status)) {
       case 'signed':
         return AppColors.green100;
-      case 'partially-signed':
-      case 'partially signed':
-        return AppColors.green.withOpacity(0.6);
       case 'comeback':
       case 'come back':
         return Colors.blue;
       case 'nothome':
       case 'not home':
         return Colors.yellow;
-      case 'bas':
+      case 'not-signed':
+      case 'not signed':
         return Colors.red;
       default:
         return Colors.grey;
@@ -44,7 +42,7 @@ class FilteredHousesBottomSheet extends StatelessWidget {
     // Map display statuses to API statuses
     if (normalized == 'not home') return 'nothome';
     if (normalized == 'come back') return 'comeback';
-    if (normalized == 'partially signed') return 'partially-signed';
+    if (normalized == 'not signed') return 'not-signed';
 
     return normalized;
   }
@@ -55,9 +53,8 @@ class FilteredHousesBottomSheet extends StatelessWidget {
 
     if (normalized == 'nothome') return 'Not Home';
     if (normalized == 'comeback') return 'Come Back';
-    if (normalized == 'partially-signed') return 'Partially Signed';
+    if (normalized == 'not-signed') return 'Not Signed';
     if (normalized == 'signed') return 'Signed';
-    if (normalized == 'bas') return 'BAS';
 
     return apiStatus; // Return original if no match
   }
