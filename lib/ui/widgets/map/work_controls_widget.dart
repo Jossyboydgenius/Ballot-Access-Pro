@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
+import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/bloc/work_bloc.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/bloc/work_event.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/bloc/work_state.dart';
@@ -120,7 +121,7 @@ class _WorkControlsWidgetState extends State<WorkControlsWidget> {
                       ? null
                       : () => _handleWorkAction(context, isWorking),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isWorking ? Colors.red : Colors.green,
+                    backgroundColor: isWorking ? Colors.red : AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(vertical: 10.h),
                     shape: RoundedRectangleBorder(
