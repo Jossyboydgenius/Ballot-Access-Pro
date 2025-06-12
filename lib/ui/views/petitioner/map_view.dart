@@ -16,6 +16,7 @@ import 'package:ballot_access_pro/ui/widgets/map/sync_controls_widget.dart';
 import 'package:ballot_access_pro/ui/widgets/map/work_controls_widget.dart';
 import 'package:ballot_access_pro/ui/widgets/map/audio_recording_button.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
@@ -27,7 +28,6 @@ import 'package:ballot_access_pro/services/local_storage_service.dart';
 import 'package:ballot_access_pro/services/territory_service.dart';
 import 'dart:convert';
 import 'dart:math';
-import 'package:flutter/foundation.dart';
 
 class MapView extends StatefulWidget {
   const MapView({super.key});
@@ -540,67 +540,107 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     );
   }
 
-  void _handleMapLongPress(LatLng position) async {
-    final address = await MapService.getAddressFromCoordinates(
-      position.latitude,
-      position.longitude,
-    );
+  void _handleMapLongPress(LatLng position) {
+    // Show immediate feedback that long press was detected
+    HapticFeedback.mediumImpact();
 
-    // Get territories and petitioner's assigned territory
-    final territories = await TerritoryService.getTerritories();
-    final assignedTerritoryId =
-        await PetitionerService().getAssignedTerritoryId();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => AddHouseBottomSheet(
-        currentAddress: address,
-        selectedStatus: selectedStatus,
-        territories: territories,
-        onStatusSelected: (status) {
-          setState(() => selectedStatus = status);
-        },
-        onAddHouse: (voters, notes, editedAddress) async {
-          // Show loading indicator
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Adding house visit...')),
-          );
-
-          // Add the house visit using offline-first approach with the edited address
-          final success = await MapService.addHouseVisitOfflineFirst(
-            lat: position.latitude,
-            long: position.longitude,
-            address: editedAddress.isNotEmpty
-                ? editedAddress
-                : address, // Use edited address if provided
-            territory: assignedTerritoryId.isNotEmpty
-                ? assignedTerritoryId
-                : '67d35ef14c19c778bbe7b597',
-            status: selectedStatus.isEmpty ? 'BAS' : selectedStatus,
-            registeredVoters: voters,
-            note: notes,
-          );
-
-          // Handle the result
-          if (success) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('House visit added successfully')),
-            );
-
-            // Refresh houses
-            await _fetchHouses();
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Failed to add house visit')),
-            );
-          }
-
-          Navigator.pop(context);
-        },
+    // Show loading indicator
+    final loadingSnackBar = SnackBar(
+      content: Row(
+        children: [
+          SizedBox(
+            width: 16.w,
+            height: 16.h,
+            child: const CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ),
+          SizedBox(width: 8.w),
+          const Text('Getting address...'),
+        ],
       ),
+      duration: const Duration(seconds: 1),
     );
+    ScaffoldMessenger.of(context).showSnackBar(loadingSnackBar);
+
+    // Use the correct type for territories based on the imported model
+    TerritoryService.getTerritories().then((territories) {
+      MapService.getAddressFromCoordinates(
+              position.latitude, position.longitude)
+          .then((address) {
+        if (mounted) {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+            ),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.95,
+            ),
+            builder: (context) => AddHouseBottomSheet(
+              currentAddress: address,
+              onStatusSelected: (status) {
+                // This is just for the bottom sheet internal state
+              },
+              selectedStatus: '',
+              territories: territories,
+              onAddHouse: (registeredVoters, notes, territory) {
+                _addHouse(
+                  position: position,
+                  address: address,
+                  territory: territory,
+                  registeredVoters: registeredVoters,
+                  notes: notes,
+                );
+              },
+            ),
+          );
+        }
+      });
+    });
+  }
+
+  // Add the missing _addHouse method
+  void _addHouse({
+    required LatLng position,
+    required String address,
+    required String territory,
+    required int registeredVoters,
+    required String notes,
+  }) {
+    // Show loading indicator
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Adding house visit...')),
+    );
+
+    // Add the house visit using offline-first approach
+    MapService.addHouseVisitOfflineFirst(
+      lat: position.latitude,
+      long: position.longitude,
+      address: address,
+      territory: territory,
+      status: selectedStatus.isEmpty
+          ? 'Signed'
+          : selectedStatus, // Default to Signed
+      registeredVoters: registeredVoters,
+      note: notes,
+    ).then((success) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('House visit added successfully')),
+        );
+
+        // Refresh houses
+        _fetchHouses();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to add house visit')),
+        );
+      }
+    });
   }
 
   void _onStatusChanged(String status) {
@@ -934,20 +974,18 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
     debugPrint('Forcing map initialization in debug mode');
 
     // Set default position if none exists
-    if (_currentPosition == null) {
-      _currentPosition = Position(
-        longitude: -0.1870,
-        latitude: 5.6037,
-        timestamp: DateTime.now(),
-        accuracy: 0,
-        altitude: 0,
-        heading: 0,
-        speed: 0,
-        speedAccuracy: 0,
-        altitudeAccuracy: 0,
-        headingAccuracy: 0,
-      );
-    }
+    _currentPosition ??= Position(
+      longitude: -0.1870,
+      latitude: 5.6037,
+      timestamp: DateTime.now(),
+      accuracy: 0,
+      altitude: 0,
+      heading: 0,
+      speed: 0,
+      speedAccuracy: 0,
+      altitudeAccuracy: 0,
+      headingAccuracy: 0,
+    );
 
     // Mark loading as complete and ensure map is created
     setState(() {
@@ -992,20 +1030,18 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
           setState(() {
             _mapCreated = true;
             _isLoading = false;
-            if (_currentPosition == null) {
-              _currentPosition = Position(
-                longitude: -0.1870,
-                latitude: 5.6037,
-                timestamp: DateTime.now(),
-                accuracy: 0,
-                altitude: 0,
-                heading: 0,
-                speed: 0,
-                speedAccuracy: 0,
-                altitudeAccuracy: 0,
-                headingAccuracy: 0,
-              );
-            }
+            _currentPosition ??= Position(
+              longitude: -0.1870,
+              latitude: 5.6037,
+              timestamp: DateTime.now(),
+              accuracy: 0,
+              altitude: 0,
+              heading: 0,
+              speed: 0,
+              speedAccuracy: 0,
+              altitudeAccuracy: 0,
+              headingAccuracy: 0,
+            );
 
             // Force initialize markers in build if empty
             if (_markers.isEmpty) {
@@ -1111,21 +1147,22 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
               onRefreshRequested: _fetchHouses,
             ),
           ),
-          // Work Controls Widget - start/stop work session and location button row
+          // Work Controls Widget centered at bottom
           Positioned(
-            bottom:
-                16.h, // Moved from 100.h to 16.h to align with location button
-            left: 16.w,
-            right: 70
-                .w, // Added right constraint to ensure it doesn't overlap with location button
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                WorkControlsWidget(),
-                AudioRecordingButton(),
-              ],
+            bottom: 16.h,
+            left: 0,
+            right: 0,
+            child: const Center(
+              child: WorkControlsWidget(),
             ),
           ),
+          // Audio Recording Button - to the left
+          Positioned(
+            bottom: 16.h,
+            left: 16.w,
+            child: const AudioRecordingButton(),
+          ),
+          // Location Button - at the bottom right
           Positioned(
             bottom: 16.h,
             right: 16.w,

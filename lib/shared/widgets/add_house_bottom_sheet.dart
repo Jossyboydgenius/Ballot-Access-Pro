@@ -5,6 +5,7 @@ import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:ballot_access_pro/shared/widgets/app_button.dart';
 import 'package:ballot_access_pro/shared/constants/app_spacing.dart';
 import 'package:ballot_access_pro/models/territory.dart';
+import 'package:ballot_access_pro/services/petitioner_service.dart';
 
 class AddHouseBottomSheet extends StatefulWidget {
   final String currentAddress;
@@ -32,6 +33,7 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _votersController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+  bool _isLoading = true;
 
   // Add validation state for notes
   bool _isNotesInvalid = false;
@@ -41,6 +43,48 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
       localSelectedStatus.isNotEmpty &&
       selectedTerritory != null &&
       _addressController.text.isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    localSelectedStatus = widget.selectedStatus;
+    _addressController.text = widget.currentAddress;
+    _loadAssignedTerritory();
+  }
+
+  // Load the petitioner's assigned territory
+  Future<void> _loadAssignedTerritory() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final territoryId = await PetitionerService().getAssignedTerritoryId();
+
+      if (mounted) {
+        setState(() {
+          // Set the territory if it exists in the territories list
+          if (territoryId.isNotEmpty &&
+              widget.territories.any((t) => t.id == territoryId)) {
+            selectedTerritory = territoryId;
+          } else if (widget.territories.isNotEmpty) {
+            // Fallback to the first territory if assigned one isn't in the list
+            selectedTerritory = widget.territories.first.id;
+          }
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading assigned territory: $e');
+      if (mounted) {
+        setState(() {
+          // Fallback to the first territory if there's an error
+          if (widget.territories.isNotEmpty) {
+            selectedTerritory = widget.territories.first.id;
+          }
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   // Add validation method for notes - changed to not show error if empty
   void _validateNotes() {
@@ -175,42 +219,61 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
               style: AppTextStyle.regular14,
             ),
             AppSpacing.v8(),
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: selectedTerritory,
-                  hint: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w),
-                    child: Text(
-                      'Select territory',
-                      style: AppTextStyle.regular14,
-                    ),
+            if (_isLoading)
+              Container(
+                height: 48.h,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(AppColors.primary),
                   ),
-                  isExpanded: true,
-                  items: widget.territories.map((Territory territory) {
-                    return DropdownMenuItem<String>(
-                      value: territory.id,
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12.w),
-                        child: Text(
-                          territory.name,
-                          style: AppTextStyle.regular14,
-                        ),
+                ),
+              )
+            else
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: selectedTerritory,
+                    hint: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12.w),
+                      child: Text(
+                        'Select territory',
+                        style: AppTextStyle.regular14,
                       ),
-                    );
-                  }).toList(),
-                  onChanged: (newValue) {
-                    setState(() {
-                      selectedTerritory = newValue;
-                    });
-                  },
+                    ),
+                    isExpanded: true,
+                    items: widget.territories.map((Territory territory) {
+                      return DropdownMenuItem<String>(
+                        value: territory.id,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12.w),
+                          child: Text(
+                            territory.name,
+                            style: AppTextStyle.regular14,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (newValue) {
+                      setState(() {
+                        selectedTerritory = newValue;
+                      });
+                    },
+                  ),
                 ),
               ),
-            ),
             AppSpacing.v16(),
             Text(
               'Initial Status',
@@ -222,11 +285,9 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
               runSpacing: 8.h,
               children: [
                 _buildStatusChip('Signed', AppColors.green100),
-                _buildStatusChip(
-                    'Partially Signed', AppColors.green.withOpacity(0.6)),
                 _buildStatusChip('Come Back', Colors.blue),
                 _buildStatusChip('Not Home', Colors.yellow),
-                _buildStatusChip('BAS', Colors.red),
+                _buildStatusChip('Not Signed', Colors.red),
               ],
             ),
             AppSpacing.v16(),
@@ -306,7 +367,7 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
                       widget.onAddHouse(
                         voters,
                         _notesController.text,
-                        _addressController.text,
+                        selectedTerritory ?? '',
                       );
                     }
                   : null,
@@ -321,28 +382,6 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
         ),
       ),
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _votersController.addListener(() {
-      setState(() {});
-    });
-
-    // Add listener for notes validation
-    _notesController.addListener(() {
-      _validateNotes();
-    });
-
-    // Initialize address controller with current address
-    _addressController.text = widget.currentAddress;
-    _addressController.addListener(() {
-      _validateAddress();
-      setState(() {}); // Ensure UI updates when address is edited
-    });
-
-    localSelectedStatus = widget.selectedStatus;
   }
 
   @override

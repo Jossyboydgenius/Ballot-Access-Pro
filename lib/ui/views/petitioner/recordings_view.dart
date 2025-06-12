@@ -398,7 +398,7 @@ class _RecordingsViewState extends State<RecordingsView> {
           'Recordings',
           style: AppTextStyle.semibold18.copyWith(color: AppColors.black),
         ),
-        backgroundColor: AppColors.white,
+        backgroundColor: Colors.transparent,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
