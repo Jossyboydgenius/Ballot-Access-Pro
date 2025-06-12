@@ -107,3 +107,23 @@ lib/
 ## License
 
 This project is proprietary and confidential.
+
+## Recent Fixes
+
+### Map View Debug Mode Issues Fixed
+- Improved `_initializeDebugMode()` method to ensure controls are visible in debug mode
+- Added multiple refresh attempts to ensure UI elements are properly rendered
+- Ensured territory and house markers are properly initialized
+- Fixed marker initialization in the `build` method for debug mode
+
+### Recording Player Issues Fixed
+- Fixed play/pause icon toggle by updating UI state before async operations
+- Improved slider value handling using `DebugUtils.safeSliderValue` and `safeSliderMaxValue` to prevent "Invalid argument(s): 0.0" error
+- Enhanced caching detection to prevent showing the downloading indicator for already cached recordings
+- Fixed file path handling for cached recordings
+
+### Address Field Made Editable in Add Pin
+- Made the address field editable in `AddHouseBottomSheet`
+- Added a `setState` call to ensure UI updates when address is edited
+- Updated `_handleMapLongPress` in `MapView` to properly use the edited address
+- Added fallback to original address if edited address is empty
