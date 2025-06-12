@@ -9,7 +9,7 @@ import 'package:ballot_access_pro/models/territory.dart';
 class AddHouseBottomSheet extends StatefulWidget {
   final String currentAddress;
   final Function(String) onStatusSelected;
-  final Function(int, String) onAddHouse;
+  final Function(int, String, String) onAddHouse;
   final String selectedStatus;
   final List<Territory> territories;
 
@@ -31,19 +31,28 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
   late String localSelectedStatus;
   final TextEditingController _notesController = TextEditingController();
   final TextEditingController _votersController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
 
   // Add validation state for notes
   bool _isNotesInvalid = false;
+  bool _isAddressInvalid = false;
 
   bool get _isFormValid =>
       localSelectedStatus.isNotEmpty &&
       selectedTerritory != null &&
-      _notesController.text.trim().isNotEmpty; // Make notes required
+      _addressController.text.isNotEmpty;
 
-  // Add validation method for notes
+  // Add validation method for notes - changed to not show error if empty
   void _validateNotes() {
     setState(() {
-      _isNotesInvalid = _notesController.text.trim().isEmpty;
+      _isNotesInvalid = false;
+    });
+  }
+
+  // Add validation method for address
+  void _validateAddress() {
+    setState(() {
+      _isAddressInvalid = _addressController.text.isEmpty;
     });
   }
 
@@ -124,27 +133,40 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
             ),
             AppSpacing.v16(),
             Text(
-              'Current Location',
+              'Address',
               style: AppTextStyle.regular14,
             ),
             AppSpacing.v8(),
-            Container(
-              padding: EdgeInsets.all(12.w),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.location_on, color: AppColors.primary),
-                  AppSpacing.h8(),
-                  Expanded(
-                    child: Text(
-                      widget.currentAddress,
-                      style: AppTextStyle.regular14,
-                    ),
+            TextField(
+              controller: _addressController,
+              style: AppTextStyle.regular14,
+              onChanged: (_) => _validateAddress(),
+              decoration: InputDecoration(
+                prefixIcon:
+                    const Icon(Icons.location_on, color: AppColors.primary),
+                hintText: 'Enter address',
+                hintStyle: AppTextStyle.regular14,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                  borderSide: BorderSide(
+                    color: _isAddressInvalid ? Colors.red : Colors.grey,
                   ),
-                ],
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                  borderSide: BorderSide(
+                    color: _isAddressInvalid ? Colors.red : Colors.grey,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                  borderSide: BorderSide(
+                    color: _isAddressInvalid ? Colors.red : AppColors.primary,
+                  ),
+                ),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                errorText: _isAddressInvalid ? 'Address is required' : null,
               ),
             ),
             AppSpacing.v16(),
@@ -238,7 +260,7 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
             ),
             AppSpacing.v16(),
             Text(
-              'Notes *', // Add asterisk to indicate required field
+              'Notes *',
               style: AppTextStyle.regular14,
             ),
             AppSpacing.v8(),
@@ -250,7 +272,7 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
                 _validateNotes();
               },
               decoration: InputDecoration(
-                hintText: 'Required: Add information about this house visit',
+                hintText: 'Optional: Add information about this house visit',
                 hintStyle:
                     AppTextStyle.regular14.copyWith(color: Colors.grey[600]),
                 border: OutlineInputBorder(
@@ -272,7 +294,7 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
                   ),
                 ),
                 contentPadding: EdgeInsets.all(12.w),
-                errorText: _isNotesInvalid ? 'Notes are required' : null,
+                errorText: _isNotesInvalid ? 'Invalid notes format' : null,
               ),
             ),
             AppSpacing.v24(),
@@ -281,7 +303,11 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
               onPressed: _isFormValid
                   ? () {
                       final voters = int.tryParse(_votersController.text) ?? 1;
-                      widget.onAddHouse(voters, _notesController.text);
+                      widget.onAddHouse(
+                        voters,
+                        _notesController.text,
+                        _addressController.text,
+                      );
                     }
                   : null,
               style: AppTextStyle.semibold16.copyWith(
@@ -309,6 +335,12 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
       _validateNotes();
     });
 
+    // Initialize address controller with current address
+    _addressController.text = widget.currentAddress;
+    _addressController.addListener(() {
+      _validateAddress();
+    });
+
     localSelectedStatus = widget.selectedStatus;
   }
 
@@ -316,6 +348,7 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
   void dispose() {
     _notesController.dispose();
     _votersController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -326,6 +359,12 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
       setState(() {
         localSelectedStatus = widget.selectedStatus;
       });
+    }
+
+    // Update address if it changes
+    if (widget.currentAddress != oldWidget.currentAddress &&
+        _addressController.text != widget.currentAddress) {
+      _addressController.text = widget.currentAddress;
     }
   }
 }
