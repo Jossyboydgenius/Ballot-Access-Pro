@@ -38,6 +38,45 @@ class PetitionerService {
     );
   }
 
+  // Method to update the petitioner's address
+  Future<ApiResponseModel<bool>> updateAddress(String newAddress) async {
+    debugPrint('Updating petitioner address to: $newAddress');
+    try {
+      final response = await _api.putData(
+        '/petitioner/update-address',
+        {'address': newAddress},
+        hasHeader: true,
+      );
+
+      if (!response.isSuccessful) {
+        return ApiResponseModel(
+          message: response.message,
+          status: false,
+          statusCode: response.code ?? 400,
+          data: false,
+          error: response.message,
+        );
+      }
+
+      return ApiResponseModel(
+        message: response.data['message'] ?? 'Address updated successfully',
+        status: true,
+        statusCode: 200,
+        data: true,
+        error: null,
+      );
+    } catch (e) {
+      debugPrint('Error updating address: $e');
+      return ApiResponseModel(
+        message: 'Failed to update address',
+        status: false,
+        statusCode: 500,
+        data: false,
+        error: e.toString(),
+      );
+    }
+  }
+
   Future<ApiResponseModel<LeadResponse>> getLeads() async {
     debugPrint('Getting petitioner leads');
     final response = await _api.getData('/petitioner/leads');
