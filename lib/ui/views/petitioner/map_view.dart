@@ -568,11 +568,13 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
             const SnackBar(content: Text('Adding house visit...')),
           );
 
-          // Add the house visit using offline-first approach
+          // Add the house visit using offline-first approach with the edited address
           final success = await MapService.addHouseVisitOfflineFirst(
             lat: position.latitude,
             long: position.longitude,
-            address: editedAddress,
+            address: editedAddress.isNotEmpty
+                ? editedAddress
+                : address, // Use edited address if provided
             territory: assignedTerritoryId.isNotEmpty
                 ? assignedTerritoryId
                 : '67d35ef14c19c778bbe7b597',
@@ -947,18 +949,35 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
       );
     }
 
-    // Mark loading as complete
+    // Mark loading as complete and ensure map is created
     setState(() {
       _isLoading = false;
       _mapCreated = true;
-    });
 
-    // Force UI refresh on a delay
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        setState(() {});
+      // Force initialize markers if empty
+      if (_markers.isEmpty) {
+        _updateMarkers();
       }
     });
+
+    // Ensure territory and house markers are initialized
+    if (_houseMarkers.isEmpty) {
+      _fetchHouses();
+    }
+
+    if (_territoryPolygons.isEmpty && _territoryPolylines.isEmpty) {
+      _fetchTerritories();
+    }
+
+    // Force UI refresh on a delay with multiple attempts to ensure controls appear
+    for (int i = 1; i <= 3; i++) {
+      Future.delayed(Duration(seconds: i), () {
+        if (mounted) {
+          setState(() {});
+          debugPrint('Debug mode UI refresh attempt $i completed');
+        }
+      });
+    }
   }
 
   @override
@@ -986,6 +1005,11 @@ class _MapViewState extends State<MapView> with AutomaticKeepAliveClientMixin {
                 altitudeAccuracy: 0,
                 headingAccuracy: 0,
               );
+            }
+
+            // Force initialize markers in build if empty
+            if (_markers.isEmpty) {
+              _updateMarkers();
             }
           });
         }
