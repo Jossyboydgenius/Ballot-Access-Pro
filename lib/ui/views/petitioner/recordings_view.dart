@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:ballot_access_pro/services/audio_service.dart';
@@ -6,6 +7,7 @@ import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:ballot_access_pro/models/audio_recording_model.dart';
 import 'package:ballot_access_pro/core/locator.dart';
+import 'package:ballot_access_pro/shared/utils/debug_utils.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:just_audio/just_audio.dart';
@@ -32,6 +34,15 @@ class _RecordingsViewState extends State<RecordingsView> {
   String? _playbackErrorMessage;
   bool _isDownloading = false;
 
+  // Audio playback state
+  Duration _position = Duration.zero;
+  Duration _duration = Duration.zero;
+  StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<Duration?>? _durationSubscription;
+
+  // Cache tracking
+  final Map<String, String> _cachedFiles = {};
+
   @override
   void initState() {
     super.initState();
@@ -40,18 +51,35 @@ class _RecordingsViewState extends State<RecordingsView> {
   }
 
   void _setupAudioPlayer() {
+    // Listen for player state changes
     _audioPlayer.playerStateStream.listen((state) {
       if (state.processingState == ProcessingState.completed) {
         setState(() {
           _isPlaying = false;
-          _currentlyPlayingId = null;
+          _position = _duration;
         });
       }
+    });
+
+    // Track position changes
+    _positionSubscription = _audioPlayer.positionStream.listen((position) {
+      setState(() {
+        _position = position;
+      });
+    });
+
+    // Track duration changes
+    _durationSubscription = _audioPlayer.durationStream.listen((duration) {
+      setState(() {
+        _duration = duration ?? Duration.zero;
+      });
     });
   }
 
   @override
   void dispose() {
+    _positionSubscription?.cancel();
+    _durationSubscription?.cancel();
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -70,6 +98,9 @@ class _RecordingsViewState extends State<RecordingsView> {
           _recordings = result.data ?? [];
           _isLoading = false;
         });
+
+        // Start preloading recordings in the background
+        _preloadRecordings();
       } else {
         setState(() {
           _error = result.message;
@@ -84,23 +115,47 @@ class _RecordingsViewState extends State<RecordingsView> {
     }
   }
 
-  // Download the audio file to a local path for more reliable playback
-  Future<String?> _downloadFile(String url, String fileName) async {
-    try {
-      setState(() {
-        _isDownloading = true;
-      });
+  // Preload recordings in the background
+  void _preloadRecordings() {
+    for (final recording in _recordings) {
+      _downloadFile(recording.url, '${recording.id}.wav', showLoading: false);
+    }
+  }
 
-      final directory = await getTemporaryDirectory();
+  // Download the audio file to a local path for more reliable playback
+  Future<String?> _downloadFile(String url, String fileName,
+      {bool showLoading = true}) async {
+    try {
+      // Check if already in cache
+      if (_cachedFiles.containsKey(url)) {
+        if (showLoading) {
+          setState(() {
+            _isDownloading = false;
+          });
+        }
+        return _cachedFiles[url];
+      }
+
+      if (showLoading) {
+        setState(() {
+          _isDownloading = true;
+        });
+      }
+
+      final directory = await getApplicationDocumentsDirectory();
       final filePath = '${directory.path}/$fileName';
 
       // Check if file already exists in cache
       final file = File(filePath);
       if (await file.exists()) {
         print('File already in cache: $filePath');
-        setState(() {
-          _isDownloading = false;
-        });
+        _cachedFiles[url] = filePath;
+
+        if (showLoading) {
+          setState(() {
+            _isDownloading = false;
+          });
+        }
         return filePath;
       }
 
@@ -114,26 +169,35 @@ class _RecordingsViewState extends State<RecordingsView> {
         // Write file to disk
         await file.writeAsBytes(response.bodyBytes);
         print('Downloaded file to: $filePath');
-        setState(() {
-          _isDownloading = false;
-        });
+        _cachedFiles[url] = filePath;
+
+        if (showLoading) {
+          setState(() {
+            _isDownloading = false;
+          });
+        }
         return filePath;
       } else {
         print('Failed to download file. Status code: ${response.statusCode}');
         print('Response body: ${response.body}');
-        setState(() {
-          _isDownloading = false;
-          _playbackErrorMessage =
-              'Download failed (${response.statusCode}): ${response.body}';
-        });
+
+        if (showLoading) {
+          setState(() {
+            _isDownloading = false;
+            _playbackErrorMessage =
+                'Download failed (${response.statusCode}): ${response.body}';
+          });
+        }
         return null;
       }
     } catch (e) {
       print('Error downloading file: $e');
-      setState(() {
-        _isDownloading = false;
-        _playbackErrorMessage = 'Download error: $e';
-      });
+      if (showLoading) {
+        setState(() {
+          _isDownloading = false;
+          _playbackErrorMessage = 'Download error: $e';
+        });
+      }
       return null;
     }
   }
@@ -148,15 +212,17 @@ class _RecordingsViewState extends State<RecordingsView> {
       // If the same recording is already playing, toggle play/pause
       if (_currentlyPlayingId == recording.id) {
         if (_isPlaying) {
-          await _audioPlayer.pause();
+          // Update UI immediately for better responsiveness
           setState(() {
             _isPlaying = false;
           });
+          await _audioPlayer.pause();
         } else {
-          await _audioPlayer.play();
+          // Update UI immediately for better responsiveness
           setState(() {
             _isPlaying = true;
           });
+          await _audioPlayer.play();
         }
         return;
       }
@@ -166,45 +232,61 @@ class _RecordingsViewState extends State<RecordingsView> {
         await _audioPlayer.stop();
       }
 
+      // First check if we already have the file cached
+      final url = recording.url;
+      final filename = '${recording.id}.wav';
+
+      // Set initial state
       setState(() {
         _currentlyPlayingId = recording.id;
         _isPlaying = false;
-        _isDownloading = true;
+        _position = Duration.zero;
+        _duration = Duration.zero;
       });
 
-      // Use the URL directly as provided by the API without any modification
-      final url = recording.url;
-      print('Using original URL from API: $url');
+      // Check if the file is already cached before showing download indicator
+      final isCached = _cachedFiles.containsKey(url) ||
+          await File(
+                  '${(await getApplicationDocumentsDirectory()).path}/$filename')
+              .exists();
 
-      // Generate a unique filename based on recording ID and timestamp
-      final filename =
-          '${recording.id}_${DateTime.now().millisecondsSinceEpoch}.wav';
+      // Only show downloading indicator if not already cached
+      if (!isCached) {
+        setState(() {
+          _isDownloading = true;
+        });
+      }
 
-      // Download the file first for more reliable playback
-      final localPath = await _downloadFile(url, filename);
+      // Download or get cached file
+      final localPath =
+          await _downloadFile(url, filename, showLoading: !isCached);
 
       if (localPath != null) {
         try {
-          // Try to play from local file
-          await _audioPlayer.setFilePath(localPath);
-          await _audioPlayer.play();
+          // Try to play from local file - update UI immediately before async operation
           setState(() {
             _isPlaying = true;
             _isDownloading = false;
           });
+
+          await _audioPlayer.setFilePath(localPath);
+          await _audioPlayer.play();
         } catch (e) {
           print('Error playing local file: $e');
           setState(() {
             _isDownloading = false;
+            _isPlaying = false;
           });
 
           // If playing local file fails, try streaming directly
           try {
-            await _audioPlayer.setUrl(url);
-            await _audioPlayer.play();
+            // Update UI before async operation
             setState(() {
               _isPlaying = true;
             });
+
+            await _audioPlayer.setUrl(url);
+            await _audioPlayer.play();
           } catch (streamError) {
             print('Error streaming audio: $streamError');
             setState(() {
@@ -232,11 +314,13 @@ class _RecordingsViewState extends State<RecordingsView> {
           _isDownloading = false;
         });
         try {
-          await _audioPlayer.setUrl(url);
-          await _audioPlayer.play();
+          // Update UI before async operation
           setState(() {
             _isPlaying = true;
           });
+
+          await _audioPlayer.setUrl(url);
+          await _audioPlayer.play();
         } catch (e) {
           print('Error playing audio: $e');
           setState(() {
@@ -267,6 +351,22 @@ class _RecordingsViewState extends State<RecordingsView> {
         _isDownloading = false;
       });
     }
+  }
+
+  // Seek to a specific position in the audio
+  Future<void> _seekTo(Duration position) async {
+    try {
+      await _audioPlayer.seek(position);
+    } catch (e) {
+      print('Error seeking: $e');
+    }
+  }
+
+  // Format duration as mm:ss
+  String _formatDuration(Duration duration) {
+    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
   }
 
   Future<void> _openExternally(String url) async {
@@ -381,11 +481,9 @@ class _RecordingsViewState extends State<RecordingsView> {
                         itemBuilder: (context, index) {
                           final recording = _recordings[index];
                           final bool isCurrentlyPlaying =
-                              _currentlyPlayingId == recording.id && _isPlaying;
-                          final bool isLoading = _currentlyPlayingId ==
-                                  recording.id &&
-                              (_isDownloading ||
-                                  (!_isPlaying && _currentlyPlayingId != null));
+                              _currentlyPlayingId == recording.id;
+                          final bool isLoading =
+                              isCurrentlyPlaying && _isDownloading;
 
                           return Card(
                             margin: EdgeInsets.only(bottom: 16.h),
@@ -410,7 +508,7 @@ class _RecordingsViewState extends State<RecordingsView> {
                                           )
                                         : IconButton(
                                             icon: Icon(
-                                              isCurrentlyPlaying
+                                              isCurrentlyPlaying && _isPlaying
                                                   ? Icons.pause
                                                   : Icons.play_arrow,
                                               color: AppColors.primary,
@@ -432,8 +530,7 @@ class _RecordingsViewState extends State<RecordingsView> {
                                         'Created: ${DateFormat('MMM dd, yyyy - hh:mm a').format(recording.createdAt.toLocal())}',
                                         style: AppTextStyle.regular12,
                                       ),
-                                      if (_currentlyPlayingId == recording.id &&
-                                          _isDownloading)
+                                      if (isCurrentlyPlaying && _isDownloading)
                                         Padding(
                                           padding: EdgeInsets.only(top: 4.h),
                                           child: Text(
@@ -453,7 +550,70 @@ class _RecordingsViewState extends State<RecordingsView> {
                                   ),
                                   onTap: () => _playRecording(recording),
                                 ),
+
+                                // Playback progress bar for currently playing recording
                                 if (_currentlyPlayingId == recording.id &&
+                                    !_isDownloading)
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 16.w,
+                                      vertical: 0,
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Text(
+                                              _formatDuration(_position),
+                                              style: AppTextStyle.regular12,
+                                            ),
+                                            Expanded(
+                                              child: Slider(
+                                                value:
+                                                    DebugUtils.safeSliderValue(
+                                                  _position.inMilliseconds
+                                                      .toDouble(),
+                                                  0,
+                                                  _duration.inMilliseconds > 0
+                                                      ? _duration.inMilliseconds
+                                                          .toDouble()
+                                                      : 1.0,
+                                                ),
+                                                min: 0,
+                                                max: _duration.inMilliseconds >
+                                                        0
+                                                    ? _duration.inMilliseconds
+                                                            .toDouble() -
+                                                        DebugUtils
+                                                            .sliderSafetyBuffer
+                                                    : 1.0,
+                                                onChanged: (value) {
+                                                  final safeValue = value.clamp(
+                                                      0,
+                                                      (_duration.inMilliseconds -
+                                                              DebugUtils
+                                                                  .sliderSafetyBuffer
+                                                                  .toInt())
+                                                          .toDouble());
+                                                  _seekTo(Duration(
+                                                    milliseconds:
+                                                        safeValue.toInt(),
+                                                  ));
+                                                },
+                                                activeColor: AppColors.primary,
+                                              ),
+                                            ),
+                                            Text(
+                                              _formatDuration(_duration),
+                                              style: AppTextStyle.regular12,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+
+                                if (isCurrentlyPlaying &&
                                     _playbackErrorMessage != null)
                                   Padding(
                                     padding: EdgeInsets.symmetric(
