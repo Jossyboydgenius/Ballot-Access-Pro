@@ -14,7 +14,8 @@ class LeadCard extends StatelessWidget {
   }) : super(key: key);
 
   String get fullName => '${lead.firstName} ${lead.lastName}';
-  String get initials => '${lead.firstName[0]}${lead.lastName[0]}'.toUpperCase();
+  String get initials =>
+      '${lead.firstName[0]}${lead.lastName[0]}'.toUpperCase();
   String get formattedDate => DateFormat('MMM dd, yyyy').format(lead.createdAt);
 
   Color _getStatusColor(String? status) {
@@ -24,7 +25,7 @@ class LeadCard extends StatelessWidget {
         return Colors.orange;
       case 'not home':
         return Colors.blue;
-      case 'bas':
+      case 'not signed':
         return Colors.red;
       default:
         return Colors.grey;
@@ -57,7 +58,8 @@ class LeadCard extends StatelessWidget {
                   backgroundColor: AppColors.primary,
                   child: Text(
                     initials,
-                    style: AppTextStyle.semibold16.copyWith(color: Colors.white),
+                    style:
+                        AppTextStyle.semibold16.copyWith(color: Colors.white),
                   ),
                 ),
                 SizedBox(width: 12.w),
@@ -88,7 +90,8 @@ class LeadCard extends StatelessWidget {
                       vertical: 6.h,
                     ),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(lead.visit?.status).withOpacity(0.1),
+                      color:
+                          _getStatusColor(lead.visit?.status).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(16.r),
                     ),
                     child: Text(
@@ -130,4 +133,4 @@ class LeadCard extends StatelessWidget {
       ),
     );
   }
-} 
+}
