@@ -245,10 +245,10 @@ class _RecordingsViewState extends State<RecordingsView> {
       });
 
       // Check if the file is already cached before showing download indicator
-      final isCached = _cachedFiles.containsKey(url) ||
-          await File(
-                  '${(await getApplicationDocumentsDirectory()).path}/$filename')
-              .exists();
+      final cachePath =
+          '${(await getApplicationDocumentsDirectory()).path}/$filename';
+      final isCached =
+          _cachedFiles.containsKey(url) || await File(cachePath).exists();
 
       // Only show downloading indicator if not already cached
       if (!isCached) {
@@ -580,21 +580,25 @@ class _RecordingsViewState extends State<RecordingsView> {
                                                       : 1.0,
                                                 ),
                                                 min: 0,
-                                                max: _duration.inMilliseconds >
-                                                        0
-                                                    ? _duration.inMilliseconds
-                                                            .toDouble() -
-                                                        DebugUtils
-                                                            .sliderSafetyBuffer
-                                                    : 1.0,
+                                                max: DebugUtils
+                                                    .safeSliderMaxValue(
+                                                  0,
+                                                  _duration.inMilliseconds > 0
+                                                      ? _duration.inMilliseconds
+                                                          .toDouble()
+                                                      : 1.0,
+                                                ),
                                                 onChanged: (value) {
-                                                  final safeValue = value.clamp(
-                                                      0,
-                                                      (_duration.inMilliseconds -
-                                                              DebugUtils
-                                                                  .sliderSafetyBuffer
-                                                                  .toInt())
-                                                          .toDouble());
+                                                  final safeValue = DebugUtils
+                                                      .safeSliderValue(
+                                                    value,
+                                                    0,
+                                                    _duration.inMilliseconds > 0
+                                                        ? _duration
+                                                            .inMilliseconds
+                                                            .toDouble()
+                                                        : 1.0,
+                                                  );
                                                   _seekTo(Duration(
                                                     milliseconds:
                                                         safeValue.toInt(),
