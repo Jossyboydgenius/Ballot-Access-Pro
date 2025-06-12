@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/bloc/work_bloc.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/bloc/work_event.dart';
@@ -134,8 +133,8 @@ class _WorkControlsWidgetState extends State<WorkControlsWidget> {
                           height: 20.h,
                           child: CircularProgressIndicator(
                             strokeWidth: 2.w,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: const AlwaysStoppedAnimation<Color>(
+                                Colors.white),
                           ),
                         )
                       : Text(
