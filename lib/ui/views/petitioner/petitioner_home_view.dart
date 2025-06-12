@@ -13,11 +13,13 @@ import 'package:ballot_access_pro/ui/views/petitioner/profile_view.dart';
 import 'package:ballot_access_pro/ui/views/petitioner/recordings_view.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class PetitionerHomeView extends StatefulWidget {
   const PetitionerHomeView({Key? key}) : super(key: key);
 
   @override
+  // ignore: library_private_types_in_public_api
   _PetitionerHomeViewState createState() => _PetitionerHomeViewState();
 }
 
@@ -124,16 +126,35 @@ class _PetitionerHomeViewState extends State<PetitionerHomeView> {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Exit App'),
-        content: const Text('Are you sure you want to exit the app?'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16.r),
+        ),
+        title: Text(
+          'Exit App',
+          style: AppTextStyle.bold20,
+        ),
+        content: Text(
+          'Are you sure you want to exit the app?',
+          style: AppTextStyle.regular16,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: AppTextStyle.regular16.copyWith(
+                color: AppColors.primary,
+              ),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Exit', style: TextStyle(color: Colors.red)),
+            child: Text(
+              'Exit',
+              style: AppTextStyle.semibold16.copyWith(
+                color: Colors.red,
+              ),
+            ),
           ),
         ],
       ),
