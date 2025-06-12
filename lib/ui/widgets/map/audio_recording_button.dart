@@ -159,99 +159,31 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_isRecording) ...[
-            Text(
-              'Recording...',
-              style: AppTextStyle.regular12.copyWith(color: Colors.red),
-            ),
-            SizedBox(height: 4.h),
-            // Wave indicator for recording
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(
-                5,
-                (index) => Container(
-                  margin: EdgeInsets.symmetric(horizontal: 2.w),
-                  width: 3.w,
-                  height: (10 + index * 2).h,
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(2.r),
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(height: 8.h),
-          ],
-
-          // Recording button
-          GestureDetector(
-            onTap: _isUploading ? null : _toggleRecording,
-            child: AnimatedBuilder(
-              animation: _animationController,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: _isRecording ? _pulseAnimation.value : 1.0,
-                  child: Container(
-                    width: 48.r,
-                    height: 48.r,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _isUploading
-                          ? Colors.grey
-                          : _isRecording
-                              ? Colors.red
-                              : AppColors.primary,
+    return FloatingActionButton(
+      heroTag: 'record',
+      mini: true,
+      backgroundColor: Colors.white,
+      onPressed: _isUploading ? null : _toggleRecording,
+      child: AnimatedBuilder(
+        animation: _animationController,
+        builder: (context, child) {
+          return _isUploading
+              ? SizedBox(
+                  width: 18.r,
+                  height: 18.r,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.w,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      _isRecording ? Colors.red : AppColors.primary,
                     ),
-                    child: _isUploading
-                        ? Center(
-                            child: SizedBox(
-                              width: 24.r,
-                              height: 24.r,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.w,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            ),
-                          )
-                        : Icon(
-                            _isRecording ? Icons.stop : Icons.mic,
-                            color: Colors.white,
-                            size: 24.r,
-                          ),
                   ),
+                )
+              : Icon(
+                  _isRecording ? Icons.stop : Icons.mic,
+                  color: _isRecording ? Colors.red : AppColors.primary,
+                  size: 20.r,
                 );
-              },
-            ),
-          ),
-          SizedBox(height: 4.h),
-          Text(
-            _isUploading
-                ? 'Uploading...'
-                : _isRecording
-                    ? 'Tap to stop'
-                    : 'Record',
-            style: AppTextStyle.regular12,
-          ),
-        ],
+        },
       ),
     );
   }
