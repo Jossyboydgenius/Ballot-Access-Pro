@@ -178,9 +178,8 @@ class BottomSheetController {
             },
             selectedStatus: '',
             territories: territories,
-            preSelectedTerritory: assignedTerritory != null
-                ? assignedTerritory.id
-                : null, // Fixed null-aware operator
+            preSelectedTerritory:
+                assignedTerritory?.id, // Fixed null-aware operator
             onAddHouse: (registeredVoters, notes, territory) {
               addHouse(
                 context: context,
@@ -213,10 +212,17 @@ class BottomSheetController {
     required int registeredVoters,
     required String notes,
   }) {
+    // Store local reference to context and navigator
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
     // Show loading indicator
-    ScaffoldMessenger.of(context).showSnackBar(
+    scaffoldMessenger.showSnackBar(
       const SnackBar(content: Text('Adding house visit...')),
     );
+
+    // Close the bottom sheet immediately
+    navigator.pop();
 
     // Add the house visit using offline-first approach
     MapService.addHouseVisitOfflineFirst(
@@ -231,14 +237,14 @@ class BottomSheetController {
       note: notes,
     ).then((success) {
       if (success && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           const SnackBar(content: Text('House visit added successfully')),
         );
 
         // Refresh houses
         refreshHouses();
       } else if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           const SnackBar(content: Text('Failed to add house visit')),
         );
       }
