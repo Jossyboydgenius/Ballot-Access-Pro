@@ -17,7 +17,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
   @override
   Widget build(BuildContext context) {
     AppDimension.init(context);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -281,7 +281,7 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
           SizedBox(height: 12.h),
           _buildStatusRow('Not Home', 20, Colors.blue),
           SizedBox(height: 12.h),
-          _buildStatusRow('BAS', 10, Colors.red),
+          _buildStatusRow('Not Signed', 10, Colors.red),
         ],
       ),
     );
@@ -315,4 +315,4 @@ class _AdminDashboardViewState extends State<AdminDashboardView> {
       ],
     );
   }
-} 
+}
