@@ -108,10 +108,11 @@ class _ConnectionStatusWidgetState extends State<ConnectionStatusWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      margin: EdgeInsets.symmetric(horizontal: 16.w),
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+    return Container(
+      constraints: BoxConstraints(
+        minWidth: 80.w,
+        maxWidth: 250.w,
+      ),
       decoration: BoxDecoration(
         color: _getStatusColor().withOpacity(0.9),
         borderRadius: BorderRadius.circular(20.r),
@@ -123,55 +124,58 @@ class _ConnectionStatusWidgetState extends State<ConnectionStatusWidget> {
           ),
         ],
       ),
-      child: Row(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStatusIcon(),
-          SizedBox(width: 8.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _getStatusText(),
-                  style: AppTextStyle.semibold12.copyWith(
-                    color: Colors.white,
-                  ),
+          // Status row
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildStatusIcon(),
+              SizedBox(width: 8.w),
+              Text(
+                _getStatusText(),
+                style: AppTextStyle.semibold12.copyWith(
+                  color: Colors.white,
                 ),
-                if (_syncStatus == SyncStatus.syncing) ...[
-                  SizedBox(height: 4.h),
-                  LinearProgressIndicator(
-                    value: _syncProgress,
-                    backgroundColor: Colors.white.withOpacity(0.3),
-                    valueColor:
-                        const AlwaysStoppedAnimation<Color>(Colors.white),
-                    minHeight: 2.h,
-                  ),
-                  if (_syncMessage.isNotEmpty) ...[
-                    SizedBox(height: 2.h),
-                    Text(
-                      _syncMessage,
-                      style: AppTextStyle.regular10.copyWith(
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ],
-                if (!_isOnline && _pendingOperations > 0) ...[
-                  SizedBox(height: 2.h),
-                  Text(
-                    '$_pendingOperations pending changes',
-                    style: AppTextStyle.regular10.copyWith(
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+              ),
+            ],
           ),
+
+          // Progress indicator
+          if (_syncStatus == SyncStatus.syncing) ...[
+            SizedBox(height: 4.h),
+            LinearProgressIndicator(
+              value: _syncProgress,
+              backgroundColor: Colors.white.withOpacity(0.3),
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              minHeight: 2.h,
+            ),
+            if (_syncMessage.isNotEmpty) ...[
+              SizedBox(height: 2.h),
+              Text(
+                _syncMessage,
+                style: AppTextStyle.regular10.copyWith(
+                  color: Colors.white.withOpacity(0.9),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
+
+          // Pending changes
+          if (!_isOnline && _pendingOperations > 0) ...[
+            SizedBox(height: 2.h),
+            Text(
+              '$_pendingOperations pending changes',
+              style: AppTextStyle.regular10.copyWith(
+                color: Colors.white.withOpacity(0.9),
+              ),
+            ),
+          ],
         ],
       ),
     );
