@@ -42,7 +42,7 @@ class _AddLeadBottomSheetState extends State<AddLeadBottomSheet> {
     addressController.text = widget.initialAddress ?? '';
     phoneController.text = widget.initialPhone ?? '';
     notesController.text = widget.initialNotes ?? '';
-    
+
     // Add listeners
     nameController.addListener(_validateForm);
     addressController.addListener(_validateForm);
@@ -52,9 +52,9 @@ class _AddLeadBottomSheetState extends State<AddLeadBottomSheet> {
 
   void _validateForm() {
     setState(() {
-      isFormValid = nameController.text.isNotEmpty &&
-          addressController.text.isNotEmpty &&
-          notesController.text.isNotEmpty;
+      isFormValid =
+          nameController.text.isNotEmpty && addressController.text.isNotEmpty;
+      // Notes are now optional
     });
   }
 
@@ -94,7 +94,8 @@ class _AddLeadBottomSheetState extends State<AddLeadBottomSheet> {
               controller: nameController,
               hintText: 'Full Name',
               keyboardType: TextInputType.name,
-              validator: (value) => value?.isEmpty == true ? 'Name is required' : null,
+              validator: (value) =>
+                  value?.isEmpty == true ? 'Name is required' : null,
               autoValidate: true,
             ),
             AppSpacing.v16(),
@@ -102,7 +103,8 @@ class _AddLeadBottomSheetState extends State<AddLeadBottomSheet> {
               controller: addressController,
               hintText: 'Address',
               keyboardType: TextInputType.streetAddress,
-              validator: (value) => value?.isEmpty == true ? 'Address is required' : null,
+              validator: (value) =>
+                  value?.isEmpty == true ? 'Address is required' : null,
               autoValidate: true,
             ),
             AppSpacing.v16(),
@@ -116,10 +118,10 @@ class _AddLeadBottomSheetState extends State<AddLeadBottomSheet> {
             AppSpacing.v16(),
             AppInput(
               controller: notesController,
-              hintText: 'Notes',
+              hintText: 'Notes (Optional)',
               maxLines: 3,
               keyboardType: TextInputType.multiline,
-              validator: (value) => value?.isEmpty == true ? 'Notes are required' : null,
+              validator: null, // No validation needed for optional field
               autoValidate: true,
             ),
             AppSpacing.v24(),
@@ -131,7 +133,9 @@ class _AddLeadBottomSheetState extends State<AddLeadBottomSheet> {
                         widget.onAddLead(
                           nameController.text,
                           addressController.text,
-                          phoneController.text.isEmpty ? null : phoneController.text,
+                          phoneController.text.isEmpty
+                              ? null
+                              : phoneController.text,
                           notesController.text,
                         );
                         Navigator.pop(context);
@@ -155,4 +159,4 @@ class _AddLeadBottomSheetState extends State<AddLeadBottomSheet> {
     notesController.dispose();
     super.dispose();
   }
-} 
+}
