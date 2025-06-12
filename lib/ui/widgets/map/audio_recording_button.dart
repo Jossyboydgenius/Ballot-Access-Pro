@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:ballot_access_pro/shared/constants/app_colors.dart';
-import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:ballot_access_pro/services/audio_service.dart';
 import 'package:ballot_access_pro/shared/utils/debug_utils.dart';
 import 'package:ballot_access_pro/core/locator.dart';
@@ -20,6 +19,8 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
   final AudioService _audioService = locator<AudioService>();
   bool _isRecording = false;
   bool _isUploading = false;
+  bool _uploadFailed = false;
+  String? _lastRecordingPath;
   late AnimationController _animationController;
   late Animation<double> _pulseAnimation;
 
@@ -48,6 +49,12 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
   }
 
   Future<void> _toggleRecording() async {
+    // If in retry state, attempt to upload the last recording
+    if (_uploadFailed && _lastRecordingPath != null) {
+      await _uploadRecording(_lastRecordingPath!);
+      return;
+    }
+
     // Handle specially in debug mode to prevent errors
     if (DebugUtils.isDebugMode) {
       if (_isRecording) {
@@ -89,26 +96,8 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
       setState(() => _isUploading = true);
 
       final filePath = await _audioService.stopRecording();
-
       if (filePath != null) {
-        // Upload the recording
-        final result = await _audioService.uploadRecording(filePath);
-
-        if (result.status) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Recording uploaded successfully'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to upload recording: ${result.message}'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        await _uploadRecording(filePath);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -116,12 +105,11 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
             backgroundColor: Colors.red,
           ),
         );
+        setState(() {
+          _isRecording = false;
+          _isUploading = false;
+        });
       }
-
-      setState(() {
-        _isRecording = false;
-        _isUploading = false;
-      });
     } else {
       // Start recording
       final hasPermission = await _audioService.checkPermission();
@@ -129,7 +117,11 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
       if (hasPermission) {
         final success = await _audioService.startRecording();
         if (success) {
-          setState(() => _isRecording = true);
+          setState(() {
+            _isRecording = true;
+            _uploadFailed = false;
+            _lastRecordingPath = null;
+          });
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -157,6 +149,48 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
     }
   }
 
+  Future<void> _uploadRecording(String filePath) async {
+    setState(() {
+      _isUploading = true;
+      _uploadFailed = false;
+    });
+
+    final result = await _audioService.uploadRecording(filePath);
+
+    if (result.status) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Recording uploaded successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      setState(() {
+        _isRecording = false;
+        _isUploading = false;
+        _uploadFailed = false;
+        _lastRecordingPath = null;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to upload recording: ${result.message}'),
+          backgroundColor: Colors.red,
+          action: SnackBarAction(
+            label: 'Retry',
+            textColor: Colors.white,
+            onPressed: () => _uploadRecording(filePath),
+          ),
+        ),
+      );
+      setState(() {
+        _isRecording = false;
+        _isUploading = false;
+        _uploadFailed = true;
+        _lastRecordingPath = filePath;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton(
@@ -179,8 +213,12 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
                   ),
                 )
               : Icon(
-                  _isRecording ? Icons.stop : Icons.mic,
-                  color: _isRecording ? Colors.red : AppColors.primary,
+                  _uploadFailed
+                      ? Icons.refresh
+                      : (_isRecording ? Icons.stop : Icons.mic),
+                  color: _uploadFailed
+                      ? Colors.red
+                      : (_isRecording ? Colors.red : AppColors.primary),
                   size: 20.r,
                 );
         },
