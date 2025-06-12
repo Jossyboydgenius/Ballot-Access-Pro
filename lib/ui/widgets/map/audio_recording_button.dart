@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 import 'package:ballot_access_pro/shared/styles/app_text_style.dart';
 import 'package:ballot_access_pro/services/audio_service.dart';
+import 'package:ballot_access_pro/shared/utils/debug_utils.dart';
 import 'package:ballot_access_pro/core/locator.dart';
 
 class AudioRecordingButton extends StatefulWidget {
@@ -45,6 +46,42 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
   }
 
   Future<void> _toggleRecording() async {
+    // Handle specially in debug mode to prevent errors
+    if (DebugUtils.isDebugMode) {
+      if (_isRecording) {
+        // Simulate stopping recording in debug mode
+        setState(() => _isUploading = true);
+
+        // Simulate delay
+        await Future.delayed(const Duration(seconds: 1));
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Recording uploaded successfully (Debug Mode)'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        setState(() {
+          _isRecording = false;
+          _isUploading = false;
+        });
+      } else {
+        // Simulate starting recording in debug mode
+        setState(() => _isRecording = true);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Recording started (Debug Mode)'),
+            backgroundColor: Colors.blue,
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Normal behavior for release mode
     if (_isRecording) {
       // Stop recording
       setState(() => _isUploading = true);
@@ -57,7 +94,7 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
 
         if (result.status) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Text('Recording uploaded successfully'),
               backgroundColor: Colors.green,
             ),
