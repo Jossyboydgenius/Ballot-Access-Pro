@@ -425,16 +425,15 @@ class MapService {
     switch (status.toLowerCase()) {
       case 'signed':
         return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
-      case 'partially-signed':
-        return BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueYellow);
       case 'comeback':
+      case 'come back':
         return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
       case 'nothome':
       case 'not home':
         return BitmapDescriptor.defaultMarkerWithHue(
-            BitmapDescriptor.hueOrange);
-      case 'bas':
+            BitmapDescriptor.hueYellow);
+      case 'not-signed':
+      case 'not signed':
         return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
       default:
         return BitmapDescriptor.defaultMarker;
@@ -447,15 +446,13 @@ class MapService {
 
     switch (normalized) {
       case 'not home':
-        return 'notHome';
+        return 'nothome';
       case 'come back':
         return 'comeback';
-      case 'partially signed':
-        return 'partially-signed';
+      case 'not signed':
+        return 'not-signed';
       case 'signed':
         return 'signed';
-      case 'bas':
-        return 'bas';
       default:
         return normalized;
     }
@@ -468,17 +465,15 @@ class MapService {
     switch (normalized) {
       case 'not home':
       case 'nothome':
-        return 'notHome';
+        return 'nothome';
       case 'come back':
       case 'comeback':
         return 'comeback';
-      case 'partially signed':
-      case 'partially-signed':
-        return 'partially-signed';
+      case 'not signed':
+      case 'not-signed':
+        return 'not-signed';
       case 'signed':
         return 'signed';
-      case 'bas':
-        return 'bas';
       default:
         return normalized;
     }
