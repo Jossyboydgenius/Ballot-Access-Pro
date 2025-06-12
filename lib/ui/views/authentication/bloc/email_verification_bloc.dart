@@ -2,6 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:ballot_access_pro/services/auth_service.dart';
 import 'package:ballot_access_pro/services/local_storage_service.dart';
 import 'package:ballot_access_pro/core/locator.dart';
+import 'package:ballot_access_pro/services/fcm_service.dart';
+import 'package:flutter/material.dart';
 import 'email_verification_event.dart';
 import 'email_verification_state.dart';
 
@@ -9,6 +11,7 @@ class EmailVerificationBloc
     extends Bloc<EmailVerificationEvent, EmailVerificationState> {
   final AuthService _authService = locator<AuthService>();
   final LocalStorageService _storageService = locator<LocalStorageService>();
+  final FCMService _fcmService = locator<FCMService>();
 
   EmailVerificationBloc() : super(const EmailVerificationState()) {
     on<VerifyEmailSubmitted>(_onVerifyEmailSubmitted);
@@ -39,6 +42,22 @@ class EmailVerificationBloc
           LocalStorageKeys.userId,
           response.data!.id!,
         );
+
+        // Update FCM token after successful email verification
+        try {
+          debugPrint('Updating FCM token after successful email verification');
+          String? fcmToken = await _fcmService.getToken();
+
+          if (fcmToken != null) {
+            final updated = await _fcmService.updateTokenOnServer(fcmToken);
+            debugPrint('FCM token update result: $updated');
+          } else {
+            debugPrint('No FCM token available to update');
+          }
+        } catch (e) {
+          debugPrint('Error updating FCM token: $e');
+          // Continue even if FCM token update fails
+        }
 
         emit(state.copyWith(
           verificationStatus: EmailVerificationStatus.success,
