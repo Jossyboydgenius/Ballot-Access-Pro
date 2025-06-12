@@ -13,6 +13,7 @@ class AddHouseBottomSheet extends StatefulWidget {
   final Function(int, String, String) onAddHouse;
   final String selectedStatus;
   final List<Territory> territories;
+  final String? preSelectedTerritory;
 
   const AddHouseBottomSheet({
     super.key,
@@ -21,6 +22,7 @@ class AddHouseBottomSheet extends StatefulWidget {
     required this.onAddHouse,
     required this.selectedStatus,
     required this.territories,
+    this.preSelectedTerritory,
   });
 
   @override
@@ -49,7 +51,16 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
     super.initState();
     localSelectedStatus = widget.selectedStatus;
     _addressController.text = widget.currentAddress;
-    _loadAssignedTerritory();
+
+    // If preSelectedTerritory is provided, use it immediately
+    if (widget.preSelectedTerritory != null &&
+        widget.preSelectedTerritory!.isNotEmpty) {
+      selectedTerritory = widget.preSelectedTerritory;
+      _isLoading = false;
+    } else {
+      // Otherwise load from the API
+      _loadAssignedTerritory();
+    }
   }
 
   // Load the petitioner's assigned territory
@@ -213,67 +224,6 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
                 errorText: _isAddressInvalid ? 'Address is required' : null,
               ),
             ),
-            AppSpacing.v16(),
-            Text(
-              'Territory',
-              style: AppTextStyle.regular14,
-            ),
-            AppSpacing.v8(),
-            if (_isLoading)
-              Container(
-                height: 48.h,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(AppColors.primary),
-                  ),
-                ),
-              )
-            else
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: selectedTerritory,
-                    hint: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w),
-                      child: Text(
-                        'Select territory',
-                        style: AppTextStyle.regular14,
-                      ),
-                    ),
-                    isExpanded: true,
-                    items: widget.territories.map((Territory territory) {
-                      return DropdownMenuItem<String>(
-                        value: territory.id,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12.w),
-                          child: Text(
-                            territory.name,
-                            style: AppTextStyle.regular14,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (newValue) {
-                      setState(() {
-                        selectedTerritory = newValue;
-                      });
-                    },
-                  ),
-                ),
-              ),
             AppSpacing.v16(),
             Text(
               'Initial Status',
