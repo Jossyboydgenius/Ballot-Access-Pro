@@ -44,7 +44,7 @@ class SignUpBloc extends Bloc<SignUpEvent, SignUpState> {
 
         await _storageService.saveStorageValue(
           LocalStorageKeys.userId,
-          response.data!.id!,
+          response.data!.id,
         );
 
         // Update FCM token after successful registration
