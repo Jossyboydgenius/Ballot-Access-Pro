@@ -278,7 +278,7 @@ class _UpdateHouseStatusBottomSheetState
                     // Force validation update after state changes
                     Future.microtask(() => _validateForm());
                   },
-                  activeThumbColor: AppColors.primary,
+                  activeTrackColor: AppColors.primary,
                 ),
               ],
             ),
