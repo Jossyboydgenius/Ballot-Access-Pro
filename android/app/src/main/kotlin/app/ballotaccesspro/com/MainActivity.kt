@@ -1,4 +1,4 @@
-package com.ballotaccesspro.app
+package app.ballotaccesspro.com
 
 import io.flutter.embedding.android.FlutterActivity
 
