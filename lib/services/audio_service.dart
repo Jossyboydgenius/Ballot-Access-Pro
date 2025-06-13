@@ -8,6 +8,7 @@ import '../core/locator.dart';
 import '../models/api_response_model.dart';
 import '../models/audio_recording_model.dart';
 import 'api/api.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class AudioService {
   AudioService._privateConstructor();
@@ -96,37 +97,70 @@ class AudioService {
         );
       }
 
+      // Check for internet connectivity first
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult == ConnectivityResult.none) {
+        return ApiResponseModel(
+          message: 'No internet connection',
+          status: false,
+          statusCode: 0,
+          data: null,
+          error: 'Please check your internet connection and try again',
+        );
+      }
+
       // Read file as bytes and convert to base64
       final bytes = await file.readAsBytes();
       final base64Audio = base64Encode(bytes);
       final audioData = 'data:audio/wav;base64,$base64Audio';
 
       // Send to server
-      final response = await _api.postData(
-        '/audio/upload',
-        {'audio': audioData},
-        hasHeader: true,
-      );
-
-      if (!response.isSuccessful) {
-        return ApiResponseModel(
-          message: response.message,
-          status: false,
-          statusCode: response.code ?? 400,
-          data: null,
-          error: response.message,
+      try {
+        final response = await _api.postData(
+          '/audio/upload',
+          {'audio': audioData},
+          hasHeader: true,
         );
+
+        if (!response.isSuccessful) {
+          return ApiResponseModel(
+            message: response.message,
+            status: false,
+            statusCode: response.code ?? 400,
+            data: null,
+            error: response.message,
+          );
+        }
+
+        final uploadResponse = AudioUploadResponse.fromJson(response.data);
+
+        return ApiResponseModel(
+          message: uploadResponse.message,
+          status: true,
+          statusCode: uploadResponse.statusCode,
+          data: uploadResponse.url,
+          error: null,
+        );
+      } catch (e) {
+        if (e is SocketException || e.toString().contains('SocketException')) {
+          return ApiResponseModel(
+            message: 'Network error',
+            status: false,
+            statusCode: 0,
+            data: null,
+            error:
+                'Failed to connect to server. Please check your internet connection.',
+          );
+        } else {
+          return ApiResponseModel(
+            message: 'Upload failed',
+            status: false,
+            statusCode: 500,
+            data: null,
+            error: e.toString(),
+          );
+        }
       }
-
-      final uploadResponse = AudioUploadResponse.fromJson(response.data);
-
-      return ApiResponseModel(
-        message: uploadResponse.message,
-        status: true,
-        statusCode: uploadResponse.statusCode,
-        data: uploadResponse.url,
-        error: null,
-      );
     } catch (e) {
       debugPrint('Error uploading recording: $e');
       return ApiResponseModel(
