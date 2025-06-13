@@ -19,10 +19,9 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
   final AudioService _audioService = locator<AudioService>();
   bool _isRecording = false;
   bool _isUploading = false;
-  bool _uploadFailed = false;
+  bool _failedUpload = false;
   String? _lastRecordingPath;
   late AnimationController _animationController;
-  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
@@ -30,13 +29,6 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
-    );
-
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.2).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInOut,
-      ),
     );
 
     _animationController.repeat(reverse: true);
@@ -48,9 +40,65 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
     super.dispose();
   }
 
+  Future<void> _uploadRecording(String filePath) async {
+    setState(() {
+      _isUploading = true;
+      _failedUpload = false;
+    });
+
+    final result = await _audioService.uploadRecording(filePath);
+
+    if (result.status) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Recording uploaded successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      setState(() {
+        _isUploading = false;
+        _lastRecordingPath = null;
+      });
+    } else {
+      // Check if it's a network-related error
+      final bool isNetworkError = result.statusCode == 0 ||
+          (result.error != null &&
+              (result.error.toString().contains('internet') ||
+                  result.error.toString().contains('network') ||
+                  result.error.toString().contains('socket') ||
+                  result.error.toString().contains('connect')));
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isNetworkError
+              ? 'No internet connection. Tap the retry button when online.'
+              : 'Failed to upload recording: ${result.message}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+          action: isNetworkError
+              ? SnackBarAction(
+                  label: 'RETRY',
+                  onPressed: () {
+                    if (_lastRecordingPath != null) {
+                      _uploadRecording(_lastRecordingPath!);
+                    }
+                  },
+                )
+              : null,
+        ),
+      );
+
+      setState(() {
+        _isUploading = false;
+        _failedUpload = true;
+        _lastRecordingPath = filePath;
+      });
+    }
+  }
+
   Future<void> _toggleRecording() async {
-    // If in retry state, attempt to upload the last recording
-    if (_uploadFailed && _lastRecordingPath != null) {
+    // If there was a failed upload, retry
+    if (_failedUpload && _lastRecordingPath != null) {
       await _uploadRecording(_lastRecordingPath!);
       return;
     }
@@ -96,7 +144,9 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
       setState(() => _isUploading = true);
 
       final filePath = await _audioService.stopRecording();
+
       if (filePath != null) {
+        // Upload the recording
         await _uploadRecording(filePath);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -110,6 +160,10 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
           _isUploading = false;
         });
       }
+
+      setState(() {
+        _isRecording = false;
+      });
     } else {
       // Start recording
       final hasPermission = await _audioService.checkPermission();
@@ -117,11 +171,7 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
       if (hasPermission) {
         final success = await _audioService.startRecording();
         if (success) {
-          setState(() {
-            _isRecording = true;
-            _uploadFailed = false;
-            _lastRecordingPath = null;
-          });
+          setState(() => _isRecording = true);
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -149,48 +199,6 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
     }
   }
 
-  Future<void> _uploadRecording(String filePath) async {
-    setState(() {
-      _isUploading = true;
-      _uploadFailed = false;
-    });
-
-    final result = await _audioService.uploadRecording(filePath);
-
-    if (result.status) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Recording uploaded successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      setState(() {
-        _isRecording = false;
-        _isUploading = false;
-        _uploadFailed = false;
-        _lastRecordingPath = null;
-      });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to upload recording: ${result.message}'),
-          backgroundColor: Colors.red,
-          action: SnackBarAction(
-            label: 'Retry',
-            textColor: Colors.white,
-            onPressed: () => _uploadRecording(filePath),
-          ),
-        ),
-      );
-      setState(() {
-        _isRecording = false;
-        _isUploading = false;
-        _uploadFailed = true;
-        _lastRecordingPath = filePath;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return FloatingActionButton(
@@ -201,26 +209,30 @@ class _AudioRecordingButtonState extends State<AudioRecordingButton>
       child: AnimatedBuilder(
         animation: _animationController,
         builder: (context, child) {
-          return _isUploading
-              ? SizedBox(
-                  width: 18.r,
-                  height: 18.r,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.w,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      _isRecording ? Colors.red : AppColors.primary,
-                    ),
-                  ),
-                )
-              : Icon(
-                  _uploadFailed
-                      ? Icons.refresh
-                      : (_isRecording ? Icons.stop : Icons.mic),
-                  color: _uploadFailed
-                      ? Colors.red
-                      : (_isRecording ? Colors.red : AppColors.primary),
-                  size: 20.r,
-                );
+          if (_isUploading) {
+            return SizedBox(
+              width: 18.r,
+              height: 18.r,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.w,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  _isRecording ? Colors.red : AppColors.primary,
+                ),
+              ),
+            );
+          } else if (_failedUpload) {
+            return Icon(
+              Icons.refresh,
+              color: Colors.red,
+              size: 20.r,
+            );
+          } else {
+            return Icon(
+              _isRecording ? Icons.stop : Icons.mic,
+              color: _isRecording ? Colors.red : AppColors.primary,
+              size: 20.r,
+            );
+          }
         },
       ),
     );
