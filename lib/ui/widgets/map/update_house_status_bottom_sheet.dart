@@ -91,13 +91,6 @@ class _UpdateHouseStatusBottomSheetState
   }
 
   // Create display-friendly status format
-  String _getDisplayStatusFormat(String apiStatus) {
-    if (apiStatus == 'notHome') return 'Not Home';
-    if (apiStatus == 'not-signed') return 'Not Signed';
-    if (apiStatus == 'comeback') return 'Come Back';
-    return apiStatus.substring(0, 1).toUpperCase() +
-        apiStatus.substring(1); // Capitalize first letter
-  }
 
   void _validateForm() {
     if (!mounted) return;
@@ -285,7 +278,7 @@ class _UpdateHouseStatusBottomSheetState
                     // Force validation update after state changes
                     Future.microtask(() => _validateForm());
                   },
-                  activeColor: AppColors.primary,
+                  activeThumbColor: AppColors.primary,
                 ),
               ],
             ),
