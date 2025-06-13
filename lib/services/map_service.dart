@@ -177,18 +177,35 @@ class MapService {
   // Helper method to convert list of houses to TerritoryHouses
   static TerritoryHouses _convertHousesToTerritoryHouses(
       List<HouseVisit> houses) {
-    return TerritoryHouses(
-      docs: houses,
-      totalDocs: houses.length,
-      limit: houses.length,
-      totalPages: 1,
-      page: 1,
-      pagingCounter: 1,
-      hasPrevPage: false,
-      hasNextPage: false,
-      prevPage: null,
-      nextPage: null,
-    );
+    try {
+      return TerritoryHouses(
+        docs: houses,
+        totalDocs: houses.length,
+        limit: houses.length,
+        totalPages: 1,
+        page: 1,
+        pagingCounter: 1,
+        hasPrevPage: false,
+        hasNextPage: false,
+        prevPage: null,
+        nextPage: null,
+      );
+    } catch (e) {
+      debugPrint('Error converting houses to TerritoryHouses: $e');
+      // Return an empty TerritoryHouses object
+      return TerritoryHouses(
+        docs: [],
+        totalDocs: 0,
+        limit: 0,
+        totalPages: 0,
+        page: 0,
+        pagingCounter: 0,
+        hasPrevPage: false,
+        hasNextPage: false,
+        prevPage: null,
+        nextPage: null,
+      );
+    }
   }
 
   // Helper method to cache houses
@@ -446,11 +463,11 @@ class MapService {
 
     switch (normalized) {
       case 'not home':
-        return 'nothome';
+        return 'notHome';
       case 'come back':
         return 'comeback';
       case 'not signed':
-        return 'not-signed';
+        return 'notSigned';
       case 'signed':
         return 'signed';
       default:
@@ -465,13 +482,14 @@ class MapService {
     switch (normalized) {
       case 'not home':
       case 'nothome':
-        return 'nothome';
+        return 'notHome';
       case 'come back':
       case 'comeback':
         return 'comeback';
       case 'not signed':
       case 'not-signed':
-        return 'not-signed';
+      case 'notsigned':
+        return 'notSigned';
       case 'signed':
         return 'signed';
       default:
