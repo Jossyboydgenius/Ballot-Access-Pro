@@ -13,8 +13,12 @@ class AppInput extends StatelessWidget {
   final void Function(String)? onChanged;
   final bool autoValidate;
   final Widget? prefixIcon;
+  final Widget? suffixIcon;
   final VoidCallback? onTap;
   final bool readOnly;
+  final bool isSearchField;
+  final Color? fillColor;
+  final double? borderRadius;
 
   const AppInput({
     super.key,
@@ -27,12 +31,18 @@ class AppInput extends StatelessWidget {
     this.onChanged,
     this.autoValidate = false,
     this.prefixIcon,
+    this.suffixIcon,
     this.onTap,
     this.readOnly = false,
+    this.isSearchField = false,
+    this.fillColor,
+    this.borderRadius,
   });
 
   @override
   Widget build(BuildContext context) {
+    final radius = borderRadius ?? (isSearchField ? 20.r : 8.r);
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
@@ -53,40 +63,49 @@ class AppInput extends StatelessWidget {
         ),
         contentPadding: EdgeInsets.symmetric(
           horizontal: 16.w,
-          vertical: 12.h,
+          vertical: isSearchField ? 14.h : 12.h,
         ),
+        filled: isSearchField || fillColor != null,
+        fillColor: fillColor ??
+            (isSearchField ? AppColors.primary.withOpacity(0.05) : null),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: const BorderSide(
-            color: Colors.grey,
+          borderRadius: BorderRadius.circular(radius),
+          borderSide: BorderSide(
+            color: isSearchField ? Colors.transparent : Colors.grey,
+            width: isSearchField ? 0 : 1,
           ),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: const BorderSide(
-            color: Colors.grey,
+          borderRadius: BorderRadius.circular(radius),
+          borderSide: BorderSide(
+            color: isSearchField ? Colors.transparent : Colors.grey,
+            width: isSearchField ? 0 : 1,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
-          borderSide: const BorderSide(
-            color: AppColors.primary,
+          borderRadius: BorderRadius.circular(radius),
+          borderSide: BorderSide(
+            color: isSearchField
+                ? AppColors.primary.withOpacity(0.3)
+                : AppColors.primary,
+            width: isSearchField ? 1 : 1,
           ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
+          borderRadius: BorderRadius.circular(radius),
           borderSide: const BorderSide(
             color: Colors.red,
           ),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.r),
+          borderRadius: BorderRadius.circular(radius),
           borderSide: const BorderSide(
             color: Colors.red,
           ),
         ),
         prefixIcon: prefixIcon,
+        suffixIcon: suffixIcon,
       ),
     );
   }
-} 
+}
