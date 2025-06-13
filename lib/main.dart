@@ -20,6 +20,7 @@ import 'shared/navigation/app_routes.dart';
 import 'core/theme/app_theme.dart';
 import 'package:ballot_access_pro/shared/widgets/connection_widget.dart';
 import 'package:ballot_access_pro/services/fcm_service.dart';
+import 'package:ballot_access_pro/shared/constants/app_colors.dart';
 
 // Define a top-level function to handle background messages
 @pragma('vm:entry-point')
@@ -182,7 +183,10 @@ class _MainAppState extends State<MainApp> {
         // Return loading indicator while initializing
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const MaterialApp(
-            home: Scaffold(body: Center(child: CircularProgressIndicator())),
+            home: Scaffold(
+                body: Center(
+                    child:
+                        CircularProgressIndicator(color: AppColors.primary))),
           );
         }
 
