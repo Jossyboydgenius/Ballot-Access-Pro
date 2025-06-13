@@ -57,7 +57,9 @@ class _LeadsViewContentState extends State<LeadsViewContent> {
                     controller: searchController,
                     hintText: 'Search leads...',
                     keyboardType: TextInputType.text,
-                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                    isSearchField: true,
+                    prefixIcon: Icon(Icons.search,
+                        color: AppColors.primary.withOpacity(0.7), size: 20.r),
                     readOnly: true,
                   ),
                 ),
@@ -67,7 +69,7 @@ class _LeadsViewContentState extends State<LeadsViewContent> {
           }
 
           final leads = state.leads?.docs ?? [];
-          
+
           return RefreshIndicator(
             color: AppColors.primary,
             onRefresh: () async {
@@ -81,7 +83,21 @@ class _LeadsViewContentState extends State<LeadsViewContent> {
                     controller: searchController,
                     hintText: 'Search leads...',
                     keyboardType: TextInputType.text,
-                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                    isSearchField: true,
+                    prefixIcon: Icon(Icons.search,
+                        color: AppColors.primary.withOpacity(0.7), size: 20.r),
+                    suffixIcon: searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(Icons.clear,
+                                color: Colors.grey, size: 18.r),
+                            onPressed: () {
+                              setState(() {
+                                searchController.clear();
+                                filteredLeads = [];
+                              });
+                            },
+                          )
+                        : null,
                     onChanged: (value) => _filterLeads(value, leads),
                   ),
                 ),
@@ -99,7 +115,8 @@ class _LeadsViewContentState extends State<LeadsViewContent> {
                               ? Center(
                                   child: Text(
                                     'No leads found',
-                                    style: AppTextStyle.regular16.copyWith(color: Colors.grey),
+                                    style: AppTextStyle.regular16
+                                        .copyWith(color: Colors.grey),
                                   ),
                                 )
                               : ListView.builder(
