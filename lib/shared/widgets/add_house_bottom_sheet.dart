@@ -270,7 +270,7 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
             ),
             AppSpacing.v16(),
             Text(
-              'Notes *',
+              'Notes (Optional)',
               style: AppTextStyle.regular14,
             ),
             AppSpacing.v8(),
