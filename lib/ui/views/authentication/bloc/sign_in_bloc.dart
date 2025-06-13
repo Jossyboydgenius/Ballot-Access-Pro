@@ -38,7 +38,7 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
         // Save user ID too if available
         await _storageService.saveStorageValue(
           LocalStorageKeys.userId,
-          response.data!.id!,
+          response.data!.id,
         );
 
         // Update FCM token after successful login
