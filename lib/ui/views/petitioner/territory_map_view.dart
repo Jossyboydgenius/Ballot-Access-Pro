@@ -109,7 +109,7 @@ class _TerritoryMapViewState extends State<TerritoryMapView> {
           color: AppColors.primary.withOpacity(0.1),
           child: Row(
             children: [
-              Icon(Icons.info_outline, color: AppColors.primary),
+              const Icon(Icons.info_outline, color: AppColors.primary),
               SizedBox(width: 8.w),
               Expanded(
                 child: Text(
