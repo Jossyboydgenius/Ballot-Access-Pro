@@ -274,7 +274,7 @@ class SyncService {
       }
     } catch (e) {
       debugPrint('SyncService: Error downloading fresh data: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -294,7 +294,7 @@ class SyncService {
     } catch (e) {
       _syncStatusController.add(SyncStatus.error);
       _syncMessageController.add('Refresh failed: ${e.toString()}');
-      throw e;
+      rethrow;
     } finally {
       _syncStatusController.add(SyncStatus.idle);
     }
@@ -411,7 +411,7 @@ class SyncService {
           'SyncService: Queued $operationType operation for house $recordId');
     } catch (e) {
       debugPrint('SyncService: Error queueing house operation: $e');
-      throw e;
+      rethrow;
     }
   }
 
