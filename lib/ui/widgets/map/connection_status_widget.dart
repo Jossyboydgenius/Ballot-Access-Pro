@@ -110,8 +110,8 @@ class _ConnectionStatusWidgetState extends State<ConnectionStatusWidget> {
   Widget build(BuildContext context) {
     return Container(
       constraints: BoxConstraints(
-        minWidth: 80.w,
-        maxWidth: 180.w,
+        minWidth: 90.w,
+        maxWidth: 110.w,
       ),
       decoration: BoxDecoration(
         color: _getStatusColor().withOpacity(0.9),
