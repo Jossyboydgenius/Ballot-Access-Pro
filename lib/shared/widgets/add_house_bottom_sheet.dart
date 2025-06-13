@@ -10,7 +10,7 @@ import 'package:ballot_access_pro/services/petitioner_service.dart';
 class AddHouseBottomSheet extends StatefulWidget {
   final String currentAddress;
   final Function(String) onStatusSelected;
-  final Function(int, String, String) onAddHouse;
+  final Function(int, String, String, String) onAddHouse;
   final String selectedStatus;
   final List<Territory> territories;
   final String? preSelectedTerritory;
@@ -42,14 +42,13 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
   bool _isAddressInvalid = false;
 
   bool get _isFormValid =>
-      localSelectedStatus.isNotEmpty &&
-      selectedTerritory != null &&
-      _addressController.text.isNotEmpty;
+      selectedTerritory != null && _addressController.text.isNotEmpty;
 
   @override
   void initState() {
     super.initState();
-    localSelectedStatus = widget.selectedStatus;
+    localSelectedStatus =
+        widget.selectedStatus.isEmpty ? 'Signed' : widget.selectedStatus;
     _addressController.text = widget.currentAddress;
 
     // If preSelectedTerritory is provided, use it immediately
@@ -120,10 +119,10 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
         onTap: () {
           setState(() {
             // Update local state immediately
-            localSelectedStatus = isSelected ? '' : label;
+            localSelectedStatus = label;
           });
           // Notify parent
-          widget.onStatusSelected(isSelected ? '' : label);
+          widget.onStatusSelected(label);
         },
         borderRadius: BorderRadius.circular(8.r),
         child: Container(
@@ -316,7 +315,9 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
             AppSpacing.v8(),
             _isLoading
                 ? const Center(
-                    child: CircularProgressIndicator(),
+                    child: CircularProgressIndicator(
+                      color: AppColors.primary,
+                    ),
                   )
                 : Container(
                     padding:
@@ -361,13 +362,11 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
               onPressed: _isFormValid
                   ? () {
                       final voters = int.tryParse(_votersController.text) ?? 1;
-                      // Close bottom sheet first
-                      Navigator.pop(context);
-                      // Then call onAddHouse
                       widget.onAddHouse(
                         voters,
                         _notesController.text,
                         selectedTerritory ?? '',
+                        localSelectedStatus,
                       );
                     }
                   : null,
