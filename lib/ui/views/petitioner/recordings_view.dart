@@ -13,6 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class RecordingsView extends StatefulWidget {
   const RecordingsView({Key? key}) : super(key: key);
@@ -91,6 +92,17 @@ class _RecordingsViewState extends State<RecordingsView> {
     });
 
     try {
+      // Check for internet connectivity first
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult == ConnectivityResult.none) {
+        setState(() {
+          _error =
+              'No internet connection. Please check your connection and try again.';
+          _isLoading = false;
+        });
+        return;
+      }
+
       final result = await _audioService.getRecordings();
 
       if (result.status) {
@@ -108,8 +120,12 @@ class _RecordingsViewState extends State<RecordingsView> {
         });
       }
     } catch (e) {
+      final String errorMessage = e.toString().contains('SocketException') ||
+              e.toString().contains('Failed host lookup')
+          ? 'Network error. Please check your internet connection and try again.'
+          : e.toString();
       setState(() {
-        _error = e.toString();
+        _error = errorMessage;
         _isLoading = false;
       });
     }
@@ -408,7 +424,9 @@ class _RecordingsViewState extends State<RecordingsView> {
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(),
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+              ),
             )
           : _error != null
               ? Center(
@@ -416,13 +434,19 @@ class _RecordingsViewState extends State<RecordingsView> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        Icons.error_outline,
+                        _error!.contains('internet') ||
+                                _error!.contains('Network')
+                            ? Icons.wifi_off
+                            : Icons.error_outline,
                         size: 48.r,
                         color: Colors.red,
                       ),
                       SizedBox(height: 16.h),
                       Text(
-                        'Error loading recordings',
+                        _error!.contains('internet') ||
+                                _error!.contains('Network')
+                            ? 'No Internet Connection'
+                            : 'Error loading recordings',
                         style: AppTextStyle.semibold16,
                       ),
                       SizedBox(height: 8.h),
@@ -475,6 +499,7 @@ class _RecordingsViewState extends State<RecordingsView> {
                     )
                   : RefreshIndicator(
                       onRefresh: _loadRecordings,
+                      color: AppColors.primary,
                       child: ListView.builder(
                         padding: EdgeInsets.all(16.w),
                         itemCount: _recordings.length,
