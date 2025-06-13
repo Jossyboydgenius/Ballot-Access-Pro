@@ -110,8 +110,8 @@ class _ConnectionStatusWidgetState extends State<ConnectionStatusWidget> {
   Widget build(BuildContext context) {
     return Container(
       constraints: BoxConstraints(
-        minWidth: 70.w,
-        maxWidth: 150.w,
+        minWidth: 80.w,
+        maxWidth: 180.w,
       ),
       decoration: BoxDecoration(
         color: _getStatusColor().withOpacity(0.9),
@@ -124,7 +124,7 @@ class _ConnectionStatusWidgetState extends State<ConnectionStatusWidget> {
           ),
         ],
       ),
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,12 +135,11 @@ class _ConnectionStatusWidgetState extends State<ConnectionStatusWidget> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _buildStatusIcon(),
-              SizedBox(width: 4.w),
+              SizedBox(width: 6.w),
               Text(
                 _getStatusText(),
                 style: AppTextStyle.semibold12.copyWith(
                   color: Colors.white,
-                  fontSize: 11.sp,
                 ),
               ),
             ],
