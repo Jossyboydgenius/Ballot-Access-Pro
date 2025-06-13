@@ -164,8 +164,6 @@ class BottomSheetController {
         showModalBottomSheet(
           context: context,
           isScrollControlled: true,
-          isDismissible: true,
-          enableDrag: true,
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
@@ -176,13 +174,14 @@ class BottomSheetController {
           builder: (context) => AddHouseBottomSheet(
             currentAddress: address,
             onStatusSelected: (status) {
-              // This is just for the bottom sheet internal state
+              // Update the controller's selected status
+              selectedStatus = status;
             },
-            selectedStatus: '',
+            selectedStatus: 'Signed',
             territories: territories,
             preSelectedTerritory:
                 assignedTerritory?.id, // Fixed null-aware operator
-            onAddHouse: (registeredVoters, notes, territory) {
+            onAddHouse: (registeredVoters, notes, territory, status) {
               addHouse(
                 context: context,
                 position: position,
@@ -190,6 +189,7 @@ class BottomSheetController {
                 territory: territory,
                 registeredVoters: registeredVoters,
                 notes: notes,
+                status: status,
               );
             },
           ),
@@ -213,18 +213,19 @@ class BottomSheetController {
     required String territory,
     required int registeredVoters,
     required String notes,
+    required String status,
   }) {
-    // Store local reference to context and navigator
+    // Store a reference to the current context for later use
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
+    final navigatorState = Navigator.of(context);
+
+    // Close the bottom sheet immediately to improve user experience
+    navigatorState.pop();
 
     // Show loading indicator
     scaffoldMessenger.showSnackBar(
       const SnackBar(content: Text('Adding house visit...')),
     );
-
-    // Close the bottom sheet immediately
-    navigator.pop();
 
     // Add the house visit using offline-first approach
     MapService.addHouseVisitOfflineFirst(
@@ -232,20 +233,18 @@ class BottomSheetController {
       long: position.longitude,
       address: address,
       territory: territory,
-      status: selectedStatus.isEmpty
-          ? 'Signed'
-          : selectedStatus, // Default to Signed
+      status: status,
       registeredVoters: registeredVoters,
       note: notes,
     ).then((success) {
-      if (success && context.mounted) {
+      if (success) {
         scaffoldMessenger.showSnackBar(
           const SnackBar(content: Text('House visit added successfully')),
         );
 
         // Refresh houses
         refreshHouses();
-      } else if (context.mounted) {
+      } else {
         scaffoldMessenger.showSnackBar(
           const SnackBar(content: Text('Failed to add house visit')),
         );
