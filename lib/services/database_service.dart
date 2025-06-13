@@ -162,24 +162,46 @@ class DatabaseService {
     final List<Map<String, dynamic>> maps = await db.query(_housesTable);
 
     return List.generate(maps.length, (i) {
-      return HouseVisit(
-        id: maps[i]['id'],
-        petitioner: Petitioner(
-          id: maps[i]['petitioner_id'],
-          firstName: maps[i]['petitioner_first_name'],
-          lastName: maps[i]['petitioner_last_name'],
-        ),
-        territory: maps[i]['territory'],
-        status: maps[i]['status'],
-        statusColor: maps[i]['status_color'],
-        address: maps[i]['address'],
-        notes: maps[i]['notes'] ?? '',
-        registeredVoters: maps[i]['registered_voters'],
-        long: maps[i]['longitude'],
-        lat: maps[i]['latitude'],
-        createdAt: DateTime.parse(maps[i]['created_at']),
-        updatedAt: DateTime.parse(maps[i]['updated_at']),
-      );
+      try {
+        return HouseVisit(
+          id: maps[i]['id'] ?? '',
+          petitioner: Petitioner(
+            id: maps[i]['petitioner_id'] ?? '',
+            firstName: maps[i]['petitioner_first_name'] ?? '',
+            lastName: maps[i]['petitioner_last_name'] ?? '',
+          ),
+          territory: maps[i]['territory'] ?? '',
+          status: maps[i]['status'] ?? '',
+          statusColor: maps[i]['status_color'] ?? '',
+          address: maps[i]['address'] ?? '',
+          notes: maps[i]['notes'] ?? '',
+          registeredVoters: maps[i]['registered_voters'] ?? 0,
+          long: maps[i]['longitude'] ?? 0.0,
+          lat: maps[i]['latitude'] ?? 0.0,
+          createdAt:
+              DateTime.tryParse(maps[i]['created_at'] ?? '') ?? DateTime.now(),
+          updatedAt:
+              DateTime.tryParse(maps[i]['updated_at'] ?? '') ?? DateTime.now(),
+        );
+      } catch (e) {
+        debugPrint('Error parsing house from database: $e');
+        // Return a placeholder house visit in case of error
+        return HouseVisit(
+          id: 'error_${DateTime.now().millisecondsSinceEpoch}',
+          petitioner:
+              Petitioner(id: '', firstName: 'Error', lastName: 'Loading'),
+          territory: '',
+          status: 'error',
+          statusColor: 'red',
+          address: 'Error loading address',
+          notes: '',
+          registeredVoters: 0,
+          long: 0.0,
+          lat: 0.0,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+      }
     });
   }
 
