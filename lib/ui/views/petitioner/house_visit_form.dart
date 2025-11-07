@@ -92,34 +92,34 @@ class _HouseVisitFormState extends State<HouseVisitForm> {
           SizedBox(height: 16.h),
 
           // Number of Voters field (optional)
-          Text(
-            'Number of Voters (Optional)',
-            style: AppTextStyle.semibold16,
-          ),
-          SizedBox(height: 8.h),
-          TextFormField(
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              hintText: 'Enter number of voters',
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-            ),
-            onChanged: (value) {
-              if (value.isNotEmpty) {
-                _numberOfVoters = int.tryParse(value);
-              } else {
-                _numberOfVoters = null;
-              }
-            },
-          ),
+          // Text(
+          //   'Number of Voters (Optional)',
+          //   style: AppTextStyle.semibold16,
+          // ),
+          // SizedBox(height: 8.h),
+          // TextFormField(
+          //   keyboardType: TextInputType.number,
+          //   decoration: InputDecoration(
+          //     hintText: 'Enter number of voters',
+          //     filled: true,
+          //     fillColor: Colors.white,
+          //     border: OutlineInputBorder(
+          //       borderRadius: BorderRadius.circular(8.r),
+          //       borderSide: BorderSide(color: Colors.grey[300]!),
+          //     ),
+          //     enabledBorder: OutlineInputBorder(
+          //       borderRadius: BorderRadius.circular(8.r),
+          //       borderSide: BorderSide(color: Colors.grey[300]!),
+          //     ),
+          //   ),
+          //   onChanged: (value) {
+          //     if (value.isNotEmpty) {
+          //       _numberOfVoters = int.tryParse(value);
+          //     } else {
+          //       _numberOfVoters = null;
+          //     }
+          //   },
+          // ),
 
           // Add other form fields as needed
         ],

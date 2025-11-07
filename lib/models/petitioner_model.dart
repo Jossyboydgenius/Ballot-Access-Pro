@@ -5,7 +5,7 @@ class PetitionerModel {
   final String email;
   final String country;
   final String address;
-  final String? fcmToken;
+  final List<String> fcmToken;
   final String gender;
   final String? picture;
   final String phone;
@@ -14,11 +14,11 @@ class PetitionerModel {
   final bool emailVerified;
   final bool phoneVerified;
   final DateTime? lastActive;
-  final Location location;
+  final Location? location;
   final List<Territory> territories;
-  final Settings settings;
-  final DateTime createdAt;
-  final DateTime updatedAt;
+  final Settings? settings;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
   final int signatures;
   final int pendingRevisits;
   final int housevisited;
@@ -31,7 +31,7 @@ class PetitionerModel {
     required this.email,
     required this.country,
     required this.address,
-    this.fcmToken,
+    required this.fcmToken,
     required this.gender,
     this.picture,
     required this.phone,
@@ -40,11 +40,11 @@ class PetitionerModel {
     required this.emailVerified,
     required this.phoneVerified,
     this.lastActive,
-    required this.location,
+    this.location,
     required this.territories,
-    required this.settings,
-    required this.createdAt,
-    required this.updatedAt,
+    this.settings,
+    this.createdAt,
+    this.updatedAt,
     required this.signatures,
     required this.pendingRevisits,
     required this.housevisited,
@@ -59,7 +59,9 @@ class PetitionerModel {
       email: json['email'] as String,
       country: json['country'] as String,
       address: json['address'] as String,
-      fcmToken: json['fcmToken'] as String?,
+      fcmToken: json['fcmToken'] != null 
+          ? (json['fcmToken'] as List<dynamic>).map((e) => e as String).toList()
+          : <String>[],
       gender: json['gender'] as String,
       picture: json['picture'] as String?,
       phone: json['phone'] as String,
@@ -70,16 +72,26 @@ class PetitionerModel {
       lastActive: json['lastActive'] != null
           ? DateTime.parse(json['lastActive'])
           : null,
-      location: Location.fromJson(json['location'] as Map<String, dynamic>),
-      territories: (json['territories'] as List<dynamic>)
-          .map((e) => Territory.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      settings: Settings.fromJson(json['settings'] as Map<String, dynamic>),
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
-      signatures: json['signatures'] as int,
-      pendingRevisits: json['pendingRevisits'] as int,
-      housevisited: json['housevisited'] as int,
+      location: json['location'] != null 
+          ? Location.fromJson(json['location'] as Map<String, dynamic>)
+          : null,
+      territories: json['territories'] != null
+          ? (json['territories'] as List<dynamic>)
+              .map((e) => Territory.fromJson(e as Map<String, dynamic>))
+              .toList()
+          : <Territory>[],
+      settings: json['settings'] != null
+          ? Settings.fromJson(json['settings'] as Map<String, dynamic>)
+          : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'])
+          : null,
+      signatures: json['signatures'] as int? ?? 0,
+      pendingRevisits: json['pendingRevisits'] as int? ?? 0,
+      housevisited: json['housevisited'] as int? ?? 0,
       successRate: json['successRate'] is String
           ? double.parse(json['successRate'])
           : (json['successRate'] as num).toDouble(),
@@ -93,12 +105,12 @@ class PetitionerModel {
 
   // Add a method to get the assigned territory ID or an empty string if none
   String get assignedTerritoryId {
-    return territories.isNotEmpty ? territories.first.id : '';
+    return assignedTerritory?.id ?? '';
   }
 
   // Add a method to get the assigned territory name or "No Territory" if none
   String get assignedTerritoryName {
-    return territories.isNotEmpty ? territories.first.name : 'No Territory';
+    return assignedTerritory?.name ?? 'No Territory';
   }
 }
 
@@ -210,16 +222,19 @@ class Path {
 class Settings {
   final bool emailNotification;
   final bool inAppNotification;
+  final bool locationTrackingEnabled;
 
   Settings({
     required this.emailNotification,
     required this.inAppNotification,
+    required this.locationTrackingEnabled,
   });
 
   factory Settings.fromJson(Map<String, dynamic> json) {
     return Settings(
       emailNotification: json['emailNotification'] as bool,
       inAppNotification: json['inAppNotification'] as bool,
+      locationTrackingEnabled: json['locationTrackingEnabled'] as bool? ?? true,
     );
   }
 }

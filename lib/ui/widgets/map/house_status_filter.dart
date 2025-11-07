@@ -24,6 +24,10 @@ class HouseStatusFilter extends StatelessWidget {
         return 'nothome';
       case 'not signed':
         return 'not-signed';
+      case 'not safe':
+        return 'not-safe';
+      case 'gated':
+        return 'gated';
       default:
         return displayStatus.toLowerCase();
     }
@@ -55,6 +59,10 @@ class HouseStatusFilter extends StatelessWidget {
             _buildStatusChip('Not Home', Colors.yellow),
             SizedBox(width: 8.w),
             _buildStatusChip('Not Signed', Colors.red),
+            SizedBox(width: 8.w),
+            _buildStatusChip('Not Safe', Colors.orange),
+            SizedBox(width: 8.w),
+            _buildStatusChip('Gated', Colors.purple)
           ],
         ),
       ),

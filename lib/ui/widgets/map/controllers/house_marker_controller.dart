@@ -41,7 +41,8 @@ class HouseMarkerController {
             icon: MapService.getMarkerIconForStatus(house.status),
             infoWindow: InfoWindow(
               title: house.address,
-              snippet: '${house.registeredVoters} registered voters',
+              // snippet: '${house.registeredVoters} registered voters',
+        snippet: 'House Visit',
             ),
             onTap: () => onHouseTapped(house),
           );
@@ -103,6 +104,9 @@ class HouseMarkerController {
     if (normalized == 'come back') return 'comeback';
     if (normalized == 'comeback') return 'comeback';
     if (normalized == 'not signed') return 'not-signed';
+    if (normalized == 'not safe') return 'not-safe';
+    if (normalized == 'not-safe') return 'not-safe';
+    if (normalized == 'gated') return 'gated';
     if (normalized == 'not-signed') return 'not-signed';
     if (normalized == 'signed') return 'signed';
 

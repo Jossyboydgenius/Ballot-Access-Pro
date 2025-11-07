@@ -84,6 +84,10 @@ class _UpdateHouseStatusBottomSheetState
       return 'not-signed';
     } else if (normalized == 'signed') {
       return 'signed';
+    } else if (normalized == 'not safe' || normalized == 'not-safe') {
+      return 'not-safe';
+    } else if (normalized == 'gated') {
+      return 'gated';
     }
 
     // Default return original if no match
@@ -252,6 +256,8 @@ class _UpdateHouseStatusBottomSheetState
                 _buildStatusChip('comeback', 'Come Back', Colors.blue),
                 _buildStatusChip('notHome', 'Not Home', Colors.yellow),
                 _buildStatusChip('not-signed', 'Not Signed', Colors.red),
+                _buildStatusChip('not-safe', 'Not Safe', Colors.orange),
+                _buildStatusChip('gated', 'Gated', Colors.purple),
               ],
             ),
 

@@ -88,7 +88,9 @@ class TerritoryView extends StatelessWidget {
                         AppSpacing.v16(),
                         _buildStatRow(
                           'Location',
-                          'Lat: ${petitioner.location.latitude}, Long: ${petitioner.location.longitude}',
+                          petitioner.location != null
+                              ? 'Lat: ${petitioner.location!.latitude}, Long: ${petitioner.location!.longitude}'
+                              : 'Location not available',
                         ),
                         AppSpacing.v8(),
                         _buildStatRow(

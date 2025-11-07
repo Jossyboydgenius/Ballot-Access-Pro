@@ -6,6 +6,7 @@ import 'package:ballot_access_pro/core/locator.dart';
 import 'package:ballot_access_pro/models/user_location.dart';
 import 'package:ballot_access_pro/services/socket_service.dart';
 import 'package:ballot_access_pro/services/local_storage_service.dart';
+import 'package:ballot_access_pro/services/petitioner_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class SocketController {
@@ -73,7 +74,9 @@ class SocketController {
 
       // Force a location update if we have one
       if (currentPosition != null) {
-        sendTrackEvent(currentPosition);
+        sendTrackEvent(currentPosition).catchError((error) {
+          debugPrint('🔴 Error in scheduled track event: $error');
+        });
       }
     });
   }
@@ -93,15 +96,34 @@ class SocketController {
     }
   }
 
-  void sendTrackEvent(Position position) {
+  Future<void> sendTrackEvent(Position position) async {
     try {
+      // Check if location tracking is enabled in petitioner settings
+      final petitionerService = locator<PetitionerService>();
+      final profileResponse = await petitionerService.getPetitionerProfile();
+      
+      if (profileResponse.status && profileResponse.data != null) {
+        final petitioner = profileResponse.data!;
+        // Check if settings exist and location tracking is disabled
+        if (petitioner.settings == null || !petitioner.settings!.locationTrackingEnabled) {
+          debugPrint('📍 Location tracking disabled, skipping track event');
+          return;
+        }
+        debugPrint('📍 Location tracking enabled, sending track event');
+      } else {
+        debugPrint('📍 Could not get petitioner profile, skipping track event for safety');
+        return;
+      }
+
       // Always try to send track event, regardless of perceived socket status
       // The socket service will handle reconnection if needed
 
-      // Get the profile name (you may need to adjust based on your data model)
-      const String name = "Petitioner"; // Replace with actual name if available
-      const String photo = ""; // Replace with actual photo URL if available
+      // Get the profile data from the petitioner response
+      final petitioner = profileResponse.data!;
+      final String name = "${petitioner.firstName} ${petitioner.lastName}";
+      final String photo = petitioner.picture ?? "";
       final String id = socketService.getUserId() ?? "unknown";
+      final bool locationTrackingEnabled = petitioner.settings?.locationTrackingEnabled ?? true;
 
       // Prepare location data with unique timestamp to prevent duplicates
       final locationData = {
@@ -115,6 +137,7 @@ class SocketController {
         "speed": position.speed.toString(),
         "heading": position.heading.toString(),
         "timestamp": DateTime.now().millisecondsSinceEpoch.toString(),
+        "locationTrackingEnabled": locationTrackingEnabled.toString(),
       };
 
       // Always try to send, the socket service will handle connection issues

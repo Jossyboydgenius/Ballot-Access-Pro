@@ -29,6 +29,7 @@ target 'Runner' do
   use_modular_headers!
 
   pod 'Firebase/Core', '~> 10.25.0'
+  pod 'Firebase/Messaging', '~> 10.25.0'
   pod 'Firebase/RemoteConfig', '~> 10.25.0'
   pod 'GoogleMaps', '8.4.0'
 

@@ -34,6 +34,10 @@ class HouseLegend extends StatelessWidget {
           _buildLegendItem('Not Home', Colors.yellow),
           SizedBox(height: 2.h),
           _buildLegendItem('Not Signed', Colors.red),
+          SizedBox(height: 2.h),
+          _buildLegendItem('Not Safe', Colors.orange),
+          SizedBox(height: 2.h),
+          _buildLegendItem('Gated', Colors.purple),
         ],
       ),
     );

@@ -237,37 +237,39 @@ class _AddHouseBottomSheetState extends State<AddHouseBottomSheet> {
                 _buildStatusChip('Come Back', Colors.blue),
                 _buildStatusChip('Not Home', Colors.yellow),
                 _buildStatusChip('Not Signed', Colors.red),
+                _buildStatusChip('Not Safe', Colors.orange),
+                _buildStatusChip('Gated', Colors.purple),
               ],
             ),
-            AppSpacing.v16(),
-            Text(
-              'Registered Voters (Optional)',
-              style: AppTextStyle.regular14,
-            ),
-            AppSpacing.v8(),
-            TextField(
-              controller: _votersController,
-              keyboardType: TextInputType.number,
-              style: AppTextStyle.regular14,
-              decoration: InputDecoration(
-                hintText: '0 (Leave empty if unknown)',
-                hintStyle: AppTextStyle.regular14,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.r),
-                  borderSide: const BorderSide(color: Colors.grey),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.r),
-                  borderSide: const BorderSide(color: Colors.grey),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.r),
-                  borderSide: const BorderSide(color: Colors.grey),
-                ),
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
-              ),
-            ),
+            // AppSpacing.v16(),
+            // Text(
+            //   'Registered Voters (Optional)',
+            //   style: AppTextStyle.regular14,
+            // ),
+            // AppSpacing.v8(),
+            // TextField(
+            //   controller: _votersController,
+            //   keyboardType: TextInputType.number,
+            //   style: AppTextStyle.regular14,
+            //   decoration: InputDecoration(
+            //     hintText: '0 (Leave empty if unknown)',
+            //     hintStyle: AppTextStyle.regular14,
+            //     border: OutlineInputBorder(
+            //       borderRadius: BorderRadius.circular(8.r),
+            //       borderSide: const BorderSide(color: Colors.grey),
+            //     ),
+            //     enabledBorder: OutlineInputBorder(
+            //       borderRadius: BorderRadius.circular(8.r),
+            //       borderSide: const BorderSide(color: Colors.grey),
+            //     ),
+            //     focusedBorder: OutlineInputBorder(
+            //       borderRadius: BorderRadius.circular(8.r),
+            //       borderSide: const BorderSide(color: Colors.grey),
+            //     ),
+            //     contentPadding:
+            //         EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+            //   ),
+            // ),
             AppSpacing.v16(),
             Text(
               'Notes (Optional)',

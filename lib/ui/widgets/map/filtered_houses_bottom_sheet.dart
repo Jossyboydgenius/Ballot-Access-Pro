@@ -30,6 +30,11 @@ class FilteredHousesBottomSheet extends StatelessWidget {
       case 'not-signed':
       case 'not signed':
         return Colors.red;
+      case 'not-safe':
+      case 'not safe':
+        return Colors.orange;
+      case 'gated':
+        return Colors.purple;
       default:
         return Colors.grey;
     }
@@ -43,6 +48,7 @@ class FilteredHousesBottomSheet extends StatelessWidget {
     if (normalized == 'not home') return 'nothome';
     if (normalized == 'come back') return 'comeback';
     if (normalized == 'not signed') return 'not-signed';
+    if (normalized == 'not safe') return 'not-safe';
 
     return normalized;
   }
@@ -55,6 +61,8 @@ class FilteredHousesBottomSheet extends StatelessWidget {
     if (normalized == 'comeback') return 'Come Back';
     if (normalized == 'not-signed') return 'Not Signed';
     if (normalized == 'signed') return 'Signed';
+    if (normalized == 'not-safe') return 'Not Safe';
+    if (normalized == 'gated') return 'Gated';
 
     return apiStatus; // Return original if no match
   }
@@ -175,11 +183,11 @@ class FilteredHousesBottomSheet extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 SizedBox(height: 4.h),
-                Text(
-                  'Registered Voters: ${house.registeredVoters}',
-                  style:
-                      AppTextStyle.regular12.copyWith(color: Colors.grey[600]),
-                ),
+                // Text(
+                  //   'Registered Voters: ${house.registeredVoters}',
+                  //   style:
+                  //       AppTextStyle.regular12.copyWith(color: Colors.grey[600]),
+                  // ),
                 if (house.notes.isNotEmpty) ...[
                   SizedBox(height: 2.h),
                   Text(

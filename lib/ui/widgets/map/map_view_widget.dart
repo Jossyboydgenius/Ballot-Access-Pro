@@ -288,7 +288,7 @@ class _MapViewWidgetState extends State<MapViewWidget> {
           ),
           // Connection Status Widget - shows online/offline status
           Positioned(
-            top: 240.h,
+            top: 290.h,
             left: 16.w,
             child: const ConnectionStatusWidget(),
           ),

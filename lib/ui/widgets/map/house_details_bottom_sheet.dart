@@ -78,10 +78,10 @@ class HouseDetailsBottomSheet extends StatelessWidget {
             ),
           ),
           SizedBox(height: 8.h),
-          Text(
-            'Registered Voters: ${house.registeredVoters}',
-            style: AppTextStyle.regular14,
-          ),
+          // Text(
+            //   'Registered Voters: ${house.registeredVoters}',
+            //   style: AppTextStyle.regular14,
+            // ),
           if (house.notes.isNotEmpty) ...[
             SizedBox(height: 8.h),
             Text(

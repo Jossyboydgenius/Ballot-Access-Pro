@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyBUCPniH8iVLXSC4oLXKImSYnBe3dr0zHg</string>
+	<string>AIzaSyBwXlML0SuGpAgjr8jQbj529hF6cef7pc4</string>
 	<key>GCM_SENDER_ID</key>
 	<string>275057923056</string>
 	<key>PLIST_VERSION</key>
@@ -25,8 +25,8 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:275057923056:ios:7e3d42d9ba946b33594335</string>
+	<string>1:275057923056:ios:48605411bff95305594335</string>
 	<key>DATABASE_URL</key>
 	<string>https://nnu-income-programme.firebaseio.com</string>
 </dict>
-</plist> 
+</plist>
