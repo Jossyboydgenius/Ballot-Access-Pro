@@ -1,4 +1,4 @@
-# Ballot Access Pro
+# Ballot Access Pro!
 
 <div align="center">
   <img src="assets/images/logo_main.png" alt="Ballot Access Pro Logo" width="200"/>
