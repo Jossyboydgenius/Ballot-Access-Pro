@@ -159,7 +159,7 @@ Ballet Access Pro is a comprehensive mobile application designed to streamline a
 
 1. **Clone the repository**
    ```bash
-   git clone [repository-url]
+   git clone https://github.com/Jossyboydgenius/Ballot-Access-Pro.git
    cd "Ballot Access Pro"
    ```
 
